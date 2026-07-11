@@ -1,0 +1,2505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedStore Pro— Medical Store Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --bg2: #111827;
+    --bg3: #1a2236;
+    --card: #162032;
+    --border: #1e3a5f;
+    --accent: #00d4ff;
+    --accent2: #00ff9d;
+    --accent3: #ff6b6b;
+    --accent4: #ffd166;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --green: #10b981;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --purple: #8b5cf6;
+    --font: 'Space Grotesk', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:var(--font); min-height:100vh; overflow-x:hidden; }
+
+  /* ─── LOGIN ─── */
+  #loginScreen {
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background: radial-gradient(ellipse at 20% 40%, #0d2a4a 0%, #0a0f1e 50%, #05080f 100%);
+    position: relative; overflow: hidden;
+  }
+  #loginScreen::before {
+    content: ''; position: absolute; inset: 0;
+    background: 
+      radial-gradient(circle at 15% 25%, rgba(0,212,255,0.12) 0%, transparent 45%),
+      radial-gradient(circle at 85% 70%, rgba(0,255,157,0.08) 0%, transparent 45%),
+      radial-gradient(circle at 50% 100%, rgba(139,92,246,0.07) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  /* Floating orbs */
+  #loginScreen::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(circle at 10% 80%, rgba(0,212,255,0.06) 0%, transparent 30%),
+      radial-gradient(circle at 90% 10%, rgba(0,255,157,0.05) 0%, transparent 30%);
+    animation: orbFloat 8s ease-in-out infinite alternate;
+  }
+  @keyframes orbFloat {
+    from { transform: translateY(0px) scale(1); }
+    to   { transform: translateY(-20px) scale(1.05); }
+  }
+  .login-box {
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 24px;
+    padding: 48px 44px; width: 400px;
+    box-shadow: 
+      0 0 0 1px rgba(0,212,255,0.08),
+      0 8px 32px rgba(0,0,0,0.5),
+      0 0 80px rgba(0,212,255,0.06),
+      inset 0 1px 0 rgba(255,255,255,0.12);
+    animation: fadeUp .5s ease;
+    position: relative; z-index: 1;
+  }
+  /* Inner glass highlight on top edge */
+  .login-box::before {
+    content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+    border-radius: 50%;
+  }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  .login-logo { text-align:center; margin-bottom:32px; }
+  /* Logo Icon Removed */
+  .login-logo h1 { font-size:1.6rem; font-weight:700; color:var(--accent); letter-spacing:-0.5px; }
+  .login-logo p { color:var(--text2); font-size:.85rem; margin-top:4px; }
+  .login-box label { display:block; font-size:.8rem; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:.8px; margin-bottom:6px; }
+  .login-box input, .login-box select {
+    width:100%; background: rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px;
+    color:var(--text); font-family:var(--font); font-size:.95rem; padding:12px 16px;
+    outline:none; transition:.2s; margin-bottom:20px;
+    backdrop-filter: blur(4px);
+  }
+  .login-box input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(0,212,255,.15); background: rgba(0,212,255,0.05); }
+  .login-box select option { background: #111827; color: var(--text); }
+  .btn-login {
+    width:100%; padding:14px; background:linear-gradient(135deg, #00d4ff, #0090b5);
+    border:none; border-radius:10px; color:#001525; font-family:var(--font); font-size:1rem;
+    font-weight:700; cursor:pointer; transition:.2s; letter-spacing:.3px;
+  }
+  .btn-login:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(0,212,255,.3); }
+  .login-error { color:var(--red); font-size:.85rem; text-align:center; margin-top:12px; display:none; }
+  
+  /* Activation Badge */
+  .activation-notice {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--red);
+    color: var(--red);
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    margin-bottom: 20px;
+    text-align: center;
+    display: none;
+  }
+
+  /* ─── APP SHELL ─── */
+  #app { display:none; min-height:100vh; }
+  .sidebar {
+    position:fixed; left:0; top:0; bottom:0; width:240px;
+    background:var(--bg2); border-right:1px solid var(--border);
+    display:flex; flex-direction:column; z-index:100; transition:.3s;
+  }
+  .sidebar-logo { padding:24px 20px 10px; }
+  .sidebar-logo h2 { font-size:1.1rem; font-weight:700; color:var(--accent); }
+  .sidebar-logo span { font-size:.75rem; color:var(--text3); }
+  
+  .live-clock-container {
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0, 212, 255, 0.03);
+  }
+  #liveClock {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--accent2);
+    font-weight: 600;
+  }
+
+  .sidebar-user { padding:16px 20px; border-bottom:1px solid var(--border); }
+  .sidebar-user .badge {
+    display:inline-block; font-size:.7rem; font-weight:700; padding:3px 10px;
+    border-radius:20px; text-transform:uppercase; letter-spacing:.8px;
+  }
+  .badge-admin { background:rgba(139,92,246,.2); color:#a78bfa; border:1px solid #8b5cf640; }
+  .badge-sales { background:rgba(0,212,255,.15); color:var(--accent); border:1px solid rgba(0,212,255,.3); }
+  .sidebar-user .name { font-size:.9rem; font-weight:600; margin-bottom:6px; }
+  nav { flex:1; padding:16px 12px; overflow-y:auto; }
+  .nav-section { font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--text3); padding:12px 10px 6px; }
+  .nav-item {
+    display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px;
+    cursor:pointer; transition:.15s; color:var(--text2); font-size:.88rem; font-weight:500;
+    margin-bottom:2px; border:1px solid transparent;
+  }
+  .nav-item:hover { background:var(--bg3); color:var(--text); }
+  .nav-item.active { background:rgba(0,212,255,.1); color:var(--accent); border-color:rgba(0,212,255,.2); }
+  .nav-item .ni { font-size:1rem; width:20px; text-align:center; }
+  .sidebar-footer { padding:16px 20px; border-top:1px solid var(--border); }
+  .btn-logout {
+    width:100%; padding:10px; background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.2);
+    border-radius:8px; color:#f87171; font-family:var(--font); font-size:.85rem; font-weight:600;
+    cursor:pointer; transition:.2s;
+  }
+  .btn-logout:hover { background:rgba(239,68,68,.2); }
+  .main { margin-left:240px; padding:32px; min-height:100vh; }
+  .page { display:none; animation:fadeUp .3s ease; }
+  .page.active { display:block; }
+  .page-header { margin-bottom:28px; display: flex; justify-content: space-between; align-items: center; }
+  .page-header h1 { font-size:1.7rem; font-weight:700; letter-spacing:-0.5px; }
+  .page-header p { color:var(--text2); font-size:.9rem; margin-top:4px; }
+
+  /* ─── CARDS ─── */
+  .card {
+    background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px;
+  }
+  .card-title { font-size:1rem; font-weight:700; margin-bottom:20px; color:var(--text); display:flex; align-items:center; gap:8px; }
+
+  /* ─── STAT CARDS ─── */
+  .stats-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:24px; }
+  .stat-card {
+    background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px;
+    position:relative; overflow:hidden;
+  }
+  .stat-card::before { content:''; position:absolute; top:0; right:0; width:80px; height:80px; border-radius:50%; opacity:.06; background:currentColor; transform:translate(20px,-20px); }
+  .stat-card .label { font-size:.75rem; font-weight:600; text-transform:uppercase; letter-spacing:.8px; color:var(--text2); margin-bottom:8px; }
+  .stat-card .value { font-size:1.9rem; font-weight:700; font-family:var(--mono); line-height:1; }
+  .stat-card .sub { font-size:.78rem; color:var(--text2); margin-top:6px; }
+  .stat-card.blue .value { color:var(--accent); }
+  .stat-card.green .value { color:var(--accent2); }
+  .stat-card.red .value { color:var(--accent3); }
+  .stat-card.yellow .value { color:var(--accent4); }
+  .stat-card.purple .value { color:var(--purple); }
+  .stat-card.orange .value { color:#ff9f43; }
+  .stat-card.orange-neg .value { color:#ff6b6b; text-shadow: 0 0 12px rgba(255,107,107,0.4); }
+
+  /* ─── FORM STYLES ─── */
+  .form-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:16px; margin-bottom:20px; }
+  .form-group label { display:block; font-size:.78rem; font-weight:600; text-transform:uppercase; letter-spacing:.7px; color:var(--text2); margin-bottom:6px; }
+  .form-group input, .form-group select {
+    width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:10px;
+    color:var(--text); font-family:var(--font); font-size:.9rem; padding:11px 14px;
+    outline:none; transition:.2s;
+  }
+  .form-group input:focus, .form-group select:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(0,212,255,.08); }
+  .form-group input[readonly] { color:var(--text2); background:var(--bg3); cursor:not-allowed; }
+  .form-group input.autofilled { border-color:var(--accent2); color:var(--accent2); }
+  .btn { padding:11px 24px; border-radius:10px; border:none; font-family:var(--font); font-size:.9rem; font-weight:600; cursor:pointer; transition:.2s; }
+  .btn-primary { background:linear-gradient(135deg,#00d4ff,#0090b5); color:#001525; }
+  .btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(0,212,255,.25); }
+  .btn-success { background:linear-gradient(135deg,#00ff9d,#00b36b); color:#001a0d; }
+  .btn-success:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(0,255,157,.25); }
+  .btn-danger { background:rgba(239,68,68,.15); color:#f87171; border:1px solid rgba(239,68,68,.25); }
+  .btn-danger:hover { background:rgba(239,68,68,.25); }
+  .btn-sm { padding:7px 14px; font-size:.8rem; border-radius:7px; }
+  .btn-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+
+  /* ─── TABLE ─── */
+  .table-wrap { overflow-x:auto; border-radius:12px; border:1px solid var(--border); }
+  table { width:100%; border-collapse:collapse; font-size:.88rem; }
+  th {
+    background:var(--bg3); padding:12px 16px; text-align:left; font-size:.73rem;
+    font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--text2);
+    white-space:nowrap;
+  }
+  td { padding:11px 16px; border-top:1px solid var(--border); color:var(--text); white-space:nowrap; }
+  tr:hover td { background:rgba(255,255,255,.02); }
+  .badge-status {
+    display:inline-block; font-size:.72rem; font-weight:700; padding:3px 10px; border-radius:20px;
+    text-transform:uppercase; letter-spacing:.5px;
+  }
+  .status-available { background:rgba(16,185,129,.15); color:#34d399; border:1px solid rgba(16,185,129,.25); }
+  .status-low { background:rgba(245,158,11,.15); color:#fbbf24; border:1px solid rgba(245,158,11,.25); }
+  .status-out { background:rgba(239,68,68,.15); color:#f87171; border:1px solid rgba(239,68,68,.25); }
+  .mono { font-family:var(--mono); font-size:.85rem; }
+
+  /* ─── SALE ITEMS TABLE ─── */
+  .items-table-wrap { border-radius:12px; border:1px solid var(--border); overflow:hidden; margin-bottom:16px; }
+  .items-table-wrap table th, .items-table-wrap table td { padding:10px 14px; }
+  .items-table-wrap input {
+    background:transparent; border:none; outline:none; color:var(--text); font-family:var(--font); font-size:.88rem; width:100%; min-width:80px;
+  }
+  .items-table-wrap input:focus { color:var(--accent); }
+  .items-table-wrap input[readonly] { color:var(--text2); cursor:not-allowed; }
+  .items-table-wrap input.autofilled { color:var(--accent2); }
+  .del-row { cursor:pointer; color:var(--text3); transition:.2s; background:none; border:none; font-size:1rem; }
+  .del-row:hover { color:var(--red); }
+
+  /* ─── INVOICE SUMMARY ─── */
+  .invoice-meta { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+  .invoice-total {
+    background:var(--bg3); border:1px solid var(--border); border-radius:12px; padding:20px;
+    display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;
+  }
+  .invoice-total .label { font-size:.85rem; color:var(--text2); }
+  .invoice-total .amount { font-size:1.6rem; font-weight:700; font-family:var(--mono); color:var(--accent2); }
+
+  /* ─── DASHBOARD ─── */
+  .dash-grid { display:grid; grid-template-columns:2fr 1fr; gap:20px; }
+  .inventory-alert { background:rgba(245,158,11,.08); border:1px solid rgba(245,158,11,.2); border-radius:10px; padding:12px 16px; display:flex; align-items:center; gap:10px; margin-bottom:12px; font-size:.88rem; }
+  .inventory-alert .dot { width:8px; height:8px; border-radius:50%; background:var(--yellow); flex-shrink:0; }
+  .recent-table tr.low-row td { color:var(--yellow); }
+
+  /* ─── TABS ─── */
+  .tabs { display:flex; gap:4px; background:var(--bg3); border-radius:12px; padding:4px; margin-bottom:24px; width:fit-content; }
+  .tab-btn {
+    padding:8px 20px; border-radius:9px; border:none; cursor:pointer; font-family:var(--font);
+    font-size:.88rem; font-weight:600; color:var(--text2); background:transparent; transition:.2s;
+  }
+  .tab-btn.active { background:var(--card); color:var(--text); box-shadow:0 2px 8px rgba(0,0,0,.3); }
+
+  /* ─── NOTIFICATIONS ─── */
+  #toast {
+    position:fixed; top:24px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:8px;
+  }
+  .toast-msg {
+    padding:14px 20px; border-radius:10px; font-size:.88rem; font-weight:600;
+    animation:slideIn .3s ease; max-width:320px;
+    display:flex; align-items:center; gap:10px;
+  }
+  @keyframes slideIn { from{opacity:0;transform:translateX(40px)} to{opacity:1;transform:translateX(0)} }
+  .toast-success { background:#0d2e1f; border:1px solid #10b981; color:#34d399; }
+  .toast-error { background:#2e0d0d; border:1px solid #ef4444; color:#f87171; }
+  .toast-info { background:#0d1f2e; border:1px solid var(--accent); color:var(--accent); }
+
+  .divider { border:none; border-top:1px solid var(--border); margin:24px 0; }
+
+  /* purchase total row */
+  .total-row { background:var(--bg3); font-weight:700; }
+  .total-row td { color:var(--accent2); font-family:var(--mono); }
+</style>
+</head>
+<body onload="checkFirstActivation()">
+
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <h1 id="logCompanyName">MedStore Pro</h1>
+      <p>Medical Store Management System</p>
+    </div>
+
+    <div id="activationNotice" class="activation-notice">
+      ⚠️ SOFTWARE NOT ACTIVATED<br>Please login with activation credentials.
+    </div>
+    
+    <label>Login As</label>
+    <select id="loginRole" onchange="toggleLoginFields()">
+      <option value="admin">Admin</option>
+      <option value="sales">Sales Person</option>
+      <option value="activation">Software Activation</option>
+    </select>
+
+    <div id="adminLoginFields">
+        <label>Username</label>
+        <input type="text" id="loginUser" placeholder="Enter username" autocomplete="off">
+        <label>Password</label>
+        <input type="password" id="loginPass" placeholder="Enter password">
+    </div>
+
+    <div id="salesLoginFields" style="display:none;">
+        <label>Salesman Name</label>
+        <input type="text" id="salesmanName" placeholder="Enter your name" autocomplete="off">
+        <p style="font-size: 0.75rem; color: var(--text3); margin-top: -10px; margin-bottom: 20px;">No password required for sales staff.</p>
+    </div>
+
+    <div id="activationFields" style="display:none;">
+        <label>Activation User</label>
+        <input type="text" id="actUser" placeholder="soft ware activation" autocomplete="off">
+        <label>Activation Password</label>
+        <input type="password" id="actPass" placeholder="Enter activation password">
+    </div>
+
+    <button class="btn-login" onclick="doLogin()">Sign In</button>
+    <div class="login-error" id="loginError">❌ Invalid credentials. Try again.</div>
+    
+    <div id="demoAccounts" style="margin-top:20px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:12px;font-size:.78rem;color:var(--text2);backdrop-filter:blur(4px);">
+      <strong style="color:var(--text2)">Credentials:</strong><br>
+      Admin: <span style="font-family:var(--mono)">admin / admin124</span><br>
+      Activation: <span style="font-family:var(--mono)">Required for first-time setup.</span>
+    </div>
+
+    <div style="margin-top:16px; text-align:center; color:var(--text3); font-size:0.78rem; font-family:var(--mono);">
+      created by Muhammad Awais-00923305678640
+    </div>
+  </div>
+</div>
+
+<div id="app">
+  <div id="toast"></div>
+
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <h2 id="sideCompanyName">MedStore Pro</h2>
+      <span id="storeTagline">Medical Management</span>
+    </div>
+    <div class="live-clock-container">
+        <div id="liveClock">00:00:00 | 01 Jan 2026</div>
+    </div>
+    <div class="sidebar-user">
+      <div class="name" id="sidebarName">—</div>
+      <span class="badge" id="sidebarBadge">—</span>
+    </div>
+    <nav id="sideNav"></nav>
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="doLogout()">⏻ Sign Out</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <div class="page" id="page-dashboard">
+      <div class="page-header">
+        <div>
+          <h1>📊 Dashboard</h1>
+          <p>Live overview of your medical store</p>
+        </div>
+        <div class="form-group" style="width: 200px;">
+          <label>Dashboard Filter</label>
+          <select id="dashPeriodFilter" onchange="renderDashboard()">
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="stats-grid" id="dashStats"></div>
+      <div class="dash-grid">
+        <div class="card">
+          <div class="card-title">Inventory Status</div>
+          <div class="table-wrap">
+            <table id="dashInvTable">
+              <thead><tr><th>Code</th><th>Medicine</th><th>Category</th><th>Stock</th><th>Sell Price</th><th>Status</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">⚠️ Low Stock Alerts</div>
+          <div id="alertsPanel"></div>
+        </div>
+      </div>
+      <div style="height:20px"></div>
+      <div class="card">
+        <div class="card-title">📋 Recent Transactions</div>
+        <div class="tabs">
+          <button class="tab-btn active" onclick="switchDashTab('sales',this)">Sales</button>
+          <button class="tab-btn" onclick="switchDashTab('purchases',this)">Purchases</button>
+        </div>
+        <div id="dashSalesTab">
+          <div class="table-wrap">
+            <table><thead><tr><th>#</th><th>Date</th><th>Customer</th><th>Invoice</th><th>Medicine</th><th>Qty</th><th>Total</th></tr></thead>
+            <tbody id="dashSalesBody"></tbody></table>
+          </div>
+        </div>
+        <div id="dashPurchasesTab" style="display:none">
+          <div class="table-wrap">
+            <table><thead><tr><th>#</th><th>Date</th><th>Supplier</th><th>Medicine</th><th>Qty</th><th>Cost</th></tr></thead>
+            <tbody id="dashPurchasesBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+      
+      <div style="text-align: center; margin-top: 30px; margin-bottom: 10px; color: var(--text3); font-size: 0.85rem; font-family: var(--mono);">
+        created by Muhammad Awais-00923305678640
+      </div>
+      
+    </div>
+
+    <!-- ══════════ SALESMAN DASHBOARD (view-only) ══════════ -->
+    <div class="page" id="page-sdashboard">
+      <div class="page-header">
+        <div>
+          <h1>📊 My Dashboard</h1>
+          <p id="sdash_subtitle">Your store overview — view only</p>
+        </div>
+        <div class="btn-row" style="align-items:flex-end; gap:10px; flex-wrap:wrap;">
+          <div class="form-group" style="margin:0; min-width:150px;">
+            <label style="font-size:.72rem;">Period</label>
+            <select id="sdashPeriodFilter" onchange="renderSalesmanDashboard()" style="padding:8px 12px; font-size:.85rem;">
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="generateDashReport()" style="height:38px;">📄 Generate Report PDF</button>
+        </div>
+      </div>
+      <div class="stats-grid" id="sdashStats"></div>
+      <div class="dash-grid">
+        <div class="card">
+          <div class="card-title">Inventory Status</div>
+          <div class="table-wrap">
+            <table id="sdashInvTable">
+              <thead><tr><th>Code</th><th>Medicine</th><th>Category</th><th>Stock</th><th>Sell Price</th><th>Status</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">⚠️ Low Stock Alerts</div>
+          <div id="sdashAlertsPanel"></div>
+        </div>
+      </div>
+      <div style="height:20px"></div>
+      <div class="card">
+        <div class="card-title">📋 Recent Transactions</div>
+        <div class="tabs">
+          <button class="tab-btn active" onclick="switchSdashTab('sales',this)">Sales</button>
+          <button class="tab-btn" onclick="switchSdashTab('purchases',this)">Purchases</button>
+          <button class="tab-btn" onclick="switchSdashTab('expenses',this)">Expenses</button>
+        </div>
+        <div id="sdashSalesTab">
+          <div class="table-wrap">
+            <table><thead><tr><th>#</th><th>Date</th><th>Customer</th><th>Invoice</th><th>Medicine</th><th>Qty</th><th>Total</th></tr></thead>
+            <tbody id="sdashSalesBody"></tbody></table>
+          </div>
+        </div>
+        <div id="sdashPurchasesTab" style="display:none">
+          <div class="table-wrap">
+            <table><thead><tr><th>#</th><th>Date</th><th>Supplier</th><th>Medicine</th><th>Qty</th><th>Cost</th></tr></thead>
+            <tbody id="sdashPurchasesBody"></tbody></table>
+          </div>
+        </div>
+        <div id="sdashExpensesTab" style="display:none">
+          <div class="table-wrap">
+            <table><thead><tr><th>#</th><th>Date</th><th>Description</th><th>Cost</th><th>Remarks</th></tr></thead>
+            <tbody id="sdashExpensesBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+      <div id="sdashMonthlySection" style="display:none; margin-top:20px;">
+        <div class="card">
+          <div class="card-title">📅 Monthly Breakdown (All Months)</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Month</th><th>Sales</th><th>Purchases</th><th>Expenses</th><th>Net Profit</th></tr></thead>
+              <tbody id="sdashMonthlyBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center; margin-top:30px; margin-bottom:10px; color:var(--text3); font-size:0.85rem; font-family:var(--mono);">
+        created by Muhammad Awais-00923305678640
+      </div>
+    </div>
+    <!-- ══════════ END SALESMAN DASHBOARD ══════════ -->
+
+    <div class="page" id="page-stock">
+      <div class="page-header">
+        <h1>🏥 Stock Entry</h1>
+        <p>Add or update medicines in inventory master</p>
+      </div>
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-title">➕ Add / Update Medicine</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Item Code</label>
+            <input type="text" id="se_code" placeholder="MED016" oninput="stockCodeLookup()" style="text-transform:uppercase">
+          </div>
+          <div class="form-group">
+            <label>Medicine Name</label>
+            <input type="text" id="se_name" placeholder="Medicine name">
+          </div>
+          <div class="form-group">
+            <label>Category</label>
+            <input type="text" id="se_cat" placeholder="e.g. Antibiotic">
+          </div>
+          <div class="form-group">
+            <label>Unit</label>
+            <input type="text" id="se_unit" placeholder="e.g. Strip, Tablet">
+          </div>
+          <div class="form-group">
+            <label>Cost Price</label>
+            <input type="number" id="se_cost" placeholder="0.00" step="0.01">
+          </div>
+          <div class="form-group">
+            <label>Selling Price</label>
+            <input type="number" id="se_sell" placeholder="0.00" step="0.01">
+          </div>
+          <div class="form-group">
+            <label>Opening Stock Qty</label>
+            <input type="number" id="se_qty" placeholder="0" min="0">
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-success" onclick="saveStockEntry()">💾 Save to Inventory</button>
+          <button class="btn btn-danger" onclick="clearStockForm()">✕ Clear</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📦 Current Inventory <span id="invCount" style="font-size:.8rem;color:var(--text2);font-weight:400"></span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Code</th><th>Medicine Name</th><th>Category</th><th>Unit</th><th>Cost Price</th><th>Sell Price</th><th>Stock</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody id="inventoryBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-sales">
+      <div class="page-header">
+        <div>
+          <h1>🛒 Daily Sales</h1>
+          <p>Enter item code & qty — details auto-fill from inventory</p>
+        </div>
+        <div id="salesmanSalesCalc" style="display:none; text-align:right;">
+          <div class="btn-row">
+            <button class="btn btn-primary btn-sm" onclick="calcTodaySales()">Calculate Today's Sales</button>
+          </div>
+          <div id="todaySalesResult" style="margin-top:5px; font-weight:bold; color:var(--accent2); font-size:1.1rem;"></div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-title">🧾 New Sale Invoice</div>
+        <div class="invoice-meta">
+          <div class="form-group">
+            <label>Customer Name <span style="color:var(--red)">*</span></label>
+            <input type="text" id="sl_customer" placeholder="Walk-in customer">
+          </div>
+          <div class="form-group">
+            <label>Invoice No</label>
+            <input type="text" id="sl_invoice" readonly>
+          </div>
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="sl_date">
+          </div>
+        </div>
+        <div class="items-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Item Code ✏️</th>
+                <th>Qty Sold ✏️</th> <th>Medicine Name</th>
+                <th>Category</th>
+                <th>Unit</th>
+                <th>Unit Price</th>
+                <th>Total</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="salesBody"></tbody>
+          </table>
+        </div>
+        <div class="btn-row" style="margin-bottom:16px">
+          <button class="btn btn-primary btn-sm" onclick="addSalesRow()">+ Add Item</button>
+        </div>
+        <div class="invoice-total">
+          <div>
+            <div class="label">Total Items: <strong id="sl_totalItems">0</strong> &nbsp;|&nbsp; Total Qty: <strong id="sl_totalQty">0</strong></div>
+            <div class="label" style="margin-top:4px">Invoice Total</div>
+          </div>
+          <div class="amount"><span id="sl_grandTotal">0.00</span></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-success" onclick="saveSale()">✅ Save Sale</button>
+          <button class="btn btn-primary" onclick="generateInvoicePDF()">📄 Print Invoice</button>
+          <button class="btn btn-danger" onclick="clearSaleForm()">✕ Clear</button>
+          <button class="btn btn-success" onclick="backupToFile()">⬇️ Download Backup</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 Sales History</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Date</th><th>Customer</th><th>Invoice</th><th>Item Code</th><th>Medicine</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead>
+            <tbody id="salesHistBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-purchase">
+      <div class="page-header">
+        <div>
+          <h1>📦 Daily Purchase</h1>
+          <p>Enter item code & qty — details auto-fill, stock updates automatically</p>
+        </div>
+        <div id="salesmanPurchaseCalc" style="display:none; text-align:right;">
+          <button class="btn btn-primary btn-sm" onclick="calcTodayPurchases()">Calculate Today's Purchases</button>
+          <div id="todayPurchaseResult" style="margin-top:5px; font-weight:bold; color:var(--purple); font-size:1.1rem;"></div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-title">🚚 New Purchase Entry</div>
+        <div class="invoice-meta">
+          <div class="form-group">
+            <label>Supplier Name <span style="color:var(--red)">*</span></label>
+            <input type="text" id="pu_supplier" placeholder="Supplier name">
+          </div>
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="pu_date">
+          </div>
+        </div>
+        <div class="items-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Item Code ✏️</th>
+                <th>Qty ✏️</th> 
+                <th>Medicine Name</th>
+                <th>Category</th>
+                <th>Unit</th>
+                <th>Cost Price ✏️</th>
+                <th>Total Cost</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="purchaseBody"></tbody>
+          </table>
+        </div>
+        <div class="btn-row" style="margin-bottom:16px">
+          <button class="btn btn-primary btn-sm" onclick="addPurchaseRow()">+ Add Item</button>
+        </div>
+        <div class="invoice-total">
+          <div>
+            <div class="label">Total Items: <strong id="pu_totalItems">0</strong> &nbsp;|&nbsp; Total Qty: <strong id="pu_totalQty">0</strong></div>
+            <div class="label" style="margin-top:4px">Grand Total Cost</div>
+          </div>
+          <div class="amount"><span id="pu_grandTotal">0.00</span></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-success" onclick="savePurchase()">✅ Save Purchase</button>
+          <button class="btn btn-danger" onclick="clearPurchaseForm()">✕ Clear</button>
+          <button class="btn btn-success" onclick="backupToFile()">⬇️ Download Backup</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 Purchase History</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Date</th><th>Supplier</th><th>Item Code</th><th>Medicine</th><th>Qty</th><th>Cost Price</th><th>Total Cost</th></tr></thead>
+            <tbody id="purchaseHistBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-expense">
+        <div class="page-header">
+            <div>
+                <h1>💸 Daily Expense</h1>
+                <p>Record daily store maintenance and miscellaneous costs</p>
+            </div>
+        </div>
+        <div class="card" style="margin-bottom:20px">
+            <div class="card-title">💳 Add New Expense</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="ex_date">
+                </div>
+                <div class="form-group">
+                    <label>Description <span style="color:var(--red)">*</span></label>
+                    <input type="text" id="ex_desc" placeholder="e.g. Electricity, Lunch, Cleaning">
+                </div>
+                <div class="form-group">
+                    <label>Cost <span style="color:var(--red)">*</span></label>
+                    <input type="number" id="ex_cost" placeholder="0.00" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Remarks</label>
+                    <input type="text" id="ex_remarks" placeholder="Optional notes">
+                </div>
+            </div>
+            <div class="btn-row">
+                <button class="btn btn-success" onclick="saveExpense()">✅ Save Expense</button>
+                <button class="btn btn-danger" onclick="clearExpenseForm()">✕ Clear</button>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title">📋 Expense History</div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>#</th><th>Date</th><th>Description</th><th>Cost</th><th>Remarks</th><th>Action</th></tr></thead>
+                    <tbody id="expenseHistBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="page" id="page-inventory">
+      <div class="page-header">
+        <h1>📋 Inventory</h1>
+      </div>
+      <div class="card">
+        <div class="card-title">Product Catalogue</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Code</th><th>Medicine Name</th><th>Category</th><th>Unit</th><th>Sell Price</th><th>Stock</th><th>Status</th></tr></thead>
+            <tbody id="inventoryViewBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-backup">
+      <div class="page-header">
+        <div>
+          <h1>☁️ Google Drive Backup</h1>
+          <p>Download your data backup and save it to Google Drive</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">☁️ Backup & Restore</div>
+        <p style="color:var(--text2); font-size:.85rem; margin-bottom: 8px;">Download a full backup of all data (inventory, sales, purchases). Save this file to your Google Drive manually.</p>
+        <p style="color:var(--text3); font-size:.78rem; margin-bottom: 20px;">To restore: click "Restore from Backup" and select your saved backup file. The backup always saves with the <strong style="color:var(--accent)">same filename</strong> so it overwrites the previous file in Google Drive.</p>
+        <div class="btn-row">
+          <button class="btn btn-success" onclick="backupToFile()">⬇️ Download Backup File</button>
+          <button class="btn btn-primary" onclick="document.getElementById('restoreFile2').click()">⬆️ Restore from Backup</button>
+          <input type="file" id="restoreFile2" style="display:none" accept=".json" onchange="restoreFromFile(event)">
+        </div>
+        <div id="backupStatus2" style="margin-top:16px; font-size:.85rem; color:var(--accent2); display:none;"></div>
+        <div id="backupPageStats" style="margin-top:20px;"></div>
+      </div>
+    </div>
+
+    <div class="page" id="page-settings">
+      <div class="page-header">
+        <h1>⚙️ Admin Settings</h1>
+        <p>Manage system preferences and company profile</p>
+      </div>
+      
+      <div class="grid-2" style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <div class="card">
+            <div class="card-title">🏢 Company Profile</div>
+            <div class="form-group" style="margin-bottom: 15px;">
+              <label>Store Name</label>
+              <input type="text" id="set_compName" value="MedStore Pro">
+            </div>
+            <div class="form-group" style="margin-bottom: 20px;">
+              <label>Tagline</label>
+              <input type="text" id="set_tagline" value="Medical Management">
+            </div>
+            <button class="btn btn-success" onclick="updateCompany()">Update Profile</button>
+          </div>
+
+          <div class="card">
+            <div class="card-title">🔒 Change Password</div>
+            <div class="form-group" style="margin-bottom: 10px;">
+              <label>Current Password</label>
+              <input type="password" id="set_oldPass" placeholder="Enter current password">
+            </div>
+            <div class="form-group" style="margin-bottom: 10px;">
+              <label>New Password</label>
+              <input type="password" id="set_newPass" placeholder="Enter new password">
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+              <label>Confirm Password</label>
+              <input type="password" id="set_confirmPass" placeholder="Re-type new password">
+            </div>
+            <button class="btn btn-primary" onclick="changePassword()">Update Password</button>
+          </div>
+      </div>
+
+      <div class="card" style="margin-top: 20px;">
+        <div class="card-title">📊 Data Management</div>
+        <p style="color:var(--text2); font-size:.85rem; margin-bottom: 20px;">Import or Export inventory data using Excel sheets.</p>
+        <div class="btn-row">
+            <button class="btn btn-success" onclick="exportToExcel()">📤 Export Excel Sheet</button>
+            <button class="btn btn-primary" onclick="document.getElementById('importFile').click()">📥 Import Excel File</button>
+            <input type="file" id="importFile" style="display:none" accept=".xlsx, .xls, .csv" onchange="importFromExcel(event)">
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 20px;">
+        <div class="card-title">☁️ Google Drive Backup</div>
+        <p style="color:var(--text2); font-size:.85rem; margin-bottom: 8px;">Download a full backup of all your data (inventory, sales, purchases). Save this file to your Google Drive manually.</p>
+        <p style="color:var(--text3); font-size:.78rem; margin-bottom: 20px;">To restore: click "Restore from Backup" and select your saved backup file.</p>
+        <div class="btn-row">
+            <button class="btn btn-success" onclick="backupToFile()">⬇️ Download Backup File</button>
+            <button class="btn btn-primary" onclick="document.getElementById('restoreFile').click()">⬆️ Restore from Backup</button>
+            <input type="file" id="restoreFile" style="display:none" accept=".json" onchange="restoreFromFile(event)">
+        </div>
+        <div id="backupStatus" style="margin-top:12px; font-size:.82rem; color:var(--accent2); display:none;"></div>
+      </div>
+
+      <div class="card" style="margin-top: 20px; border-color: rgba(239,68,68,0.35); background: rgba(239,68,68,0.04);">
+        <div class="card-title" style="color:#f87171;">🔴 Reset to Factory Settings</div>
+        <p style="color:var(--text2); font-size:.85rem; margin-bottom: 6px;">
+          This will permanently delete <strong style="color:#f87171;">all data</strong> — inventory, sales, purchases and expenses —
+          and reset the invoice counter. Your store name, password, activation status and Firebase config will <strong style="color:var(--accent2);">not</strong> be affected.
+        </p>
+        <p style="color:var(--text3); font-size:.78rem; margin-bottom: 18px;">⚠️ This action cannot be undone. Download a backup first if needed.</p>
+
+        <!-- Password confirmation row -->
+        <div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; max-width:500px;">
+          <div class="form-group" style="flex:1; min-width:200px; margin:0;">
+            <label>Admin Password (required to confirm)</label>
+            <input type="password" id="resetConfirmPass" placeholder="Enter admin password" style="border-color:rgba(239,68,68,0.4);">
+          </div>
+          <button class="btn btn-danger" onclick="factoryReset()" style="height:44px; padding: 0 24px; white-space:nowrap;">
+            🔴 Reset All Data
+          </button>
+        </div>
+        <div id="resetMsg" style="margin-top:10px; font-size:.83rem; display:none;"></div>
+      </div>
+
+      <!-- ══ CREATOR RESET BUTTONS ══ -->
+      <div class="card" style="margin-top: 20px; border-color: rgba(139,92,246,0.35); background: rgba(139,92,246,0.04);">
+        <div class="card-title" style="color:#a78bfa;">🛡️ Creator Tools</div>
+        <p style="color:var(--text2); font-size:.85rem; margin-bottom: 18px;">
+          Advanced system reset tools. These require the <strong style="color:#a78bfa;">Creator Password</strong> to execute.
+        </p>
+        <div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; max-width:600px; margin-bottom:16px;">
+          <div class="form-group" style="flex:1; min-width:220px; margin:0;">
+            <label>Creator Password</label>
+            <input type="password" id="creatorPassInput" placeholder="Enter creator password" style="border-color:rgba(139,92,246,0.4);">
+          </div>
+          <button class="btn" onclick="creatorFactoryReset()" style="height:44px; padding:0 20px; background:rgba(239,68,68,.15); color:#f87171; border:1px solid rgba(239,68,68,.4); white-space:nowrap;">
+            🔴 Factory Reset
+          </button>
+          <button class="btn" onclick="creatorDashboardReset()" style="height:44px; padding:0 20px; background:rgba(245,158,11,.1); color:#fbbf24; border:1px solid rgba(245,158,11,.4); white-space:nowrap;">
+            🟡 Reset Dashboard
+          </button>
+        </div>
+        <div style="display:flex; gap:16px; flex-wrap:wrap;">
+          <div style="font-size:.75rem; color:var(--text3); padding:8px 12px; background:rgba(239,68,68,0.06); border-radius:8px; border:1px solid rgba(239,68,68,0.2);">
+            <strong style="color:#f87171;">🔴 Factory Reset</strong><br>Deletes ALL data — inventory, sales, purchases, expenses. Cannot be undone.
+          </div>
+          <div style="font-size:.75rem; color:var(--text3); padding:8px 12px; background:rgba(245,158,11,0.06); border-radius:8px; border:1px solid rgba(245,158,11,0.2);">
+            <strong style="color:#fbbf24;">🟡 Reset Dashboard</strong><br>Clears all sales, purchases &amp; expense history only. Stock &amp; inventory data is kept.
+          </div>
+        </div>
+        <div id="creatorResetMsg" style="margin-top:12px; font-size:.83rem; display:none;"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ─── CLIENT IDENTITY (Change CLIENT_ID for each new customer copy) ───
+const CLIENT_ID = "CLIENT_0300";   // ← CHANGE THIS for each customer e.g. CLIENT_002, CLIENT_003
+const CLIENT_NAME = "Default Store"; // ← CHANGE THIS to customer's store name
+
+// ─── SECURITY & ACTIVATION ───
+const ACTIVATION_STORAGE_KEY = CLIENT_ID + "_medstore_activated";
+const ACTIVATION_USER = "soft ware activation";
+const _key = "SmVuaW91c0Ax";
+
+function checkFirstActivation() {
+    // Auto-set client store name on first load
+    if (!localStorage.getItem(CLIENT_ID + '_medstore_company')) {
+        localStorage.setItem(CLIENT_ID + '_medstore_company', CLIENT_NAME);
+    }
+    const storedName = localStorage.getItem(CLIENT_ID + '_medstore_company');
+    const storedTagline = localStorage.getItem(CLIENT_ID + '_medstore_tagline') || 'Medical Management';
+    document.getElementById('logCompanyName').textContent = storedName;
+    document.getElementById('sideCompanyName').textContent = storedName;
+    document.getElementById('storeTagline').textContent = storedTagline;
+    document.getElementById('set_compName').value = storedName;
+    document.getElementById('set_tagline').value = storedTagline;
+
+    const isActivated = localStorage.getItem(ACTIVATION_STORAGE_KEY) === "true";
+    if (!isActivated) {
+        document.getElementById('activationNotice').style.display = "block";
+    }
+    // Show client ID badge
+    const badge = document.getElementById('clientIdBadge');
+    if (badge) badge.textContent = CLIENT_ID + ' — ' + (localStorage.getItem(CLIENT_ID + '_medstore_company') || CLIENT_NAME);
+}
+
+// PERSISTENCE LOGIC — all keys prefixed with CLIENT_ID
+function saveData() {
+    localStorage.setItem(CLIENT_ID + '_medstore_inventory', JSON.stringify(inventory));
+    localStorage.setItem(CLIENT_ID + '_medstore_sales', JSON.stringify(salesRecords));
+    localStorage.setItem(CLIENT_ID + '_medstore_purchases', JSON.stringify(purchaseRecords));
+    localStorage.setItem(CLIENT_ID + '_medstore_expenses', JSON.stringify(expenseRecords));
+    localStorage.setItem(CLIENT_ID + '_medstore_invoice_count', invoiceCounter.toString());
+}
+
+function loadData() {
+    // ── Migrate old unprefixed data (one-time, for existing installs) ──
+    const oldInv = localStorage.getItem('medstore_inventory');
+    if (oldInv && !localStorage.getItem(CLIENT_ID + '_medstore_inventory')) {
+        localStorage.setItem(CLIENT_ID + '_medstore_inventory', oldInv);
+        localStorage.setItem(CLIENT_ID + '_medstore_sales', localStorage.getItem('medstore_sales') || '[]');
+        localStorage.setItem(CLIENT_ID + '_medstore_purchases', localStorage.getItem('medstore_purchases') || '[]');
+        localStorage.setItem(CLIENT_ID + '_medstore_invoice_count', localStorage.getItem('medstore_invoice_count') || '900000');
+        if (!localStorage.getItem(CLIENT_ID + '_medstore_activated') && localStorage.getItem('medstore_activated')) {
+            localStorage.setItem(CLIENT_ID + '_medstore_activated', localStorage.getItem('medstore_activated'));
+        }
+    }
+
+    const inv = localStorage.getItem(CLIENT_ID + '_medstore_inventory');
+    const sal = localStorage.getItem(CLIENT_ID + '_medstore_sales');
+    const pur = localStorage.getItem(CLIENT_ID + '_medstore_purchases');
+    const exp = localStorage.getItem(CLIENT_ID + '_medstore_expenses');
+    const invCount = localStorage.getItem(CLIENT_ID + '_medstore_invoice_count');
+
+    if (inv) inventory = JSON.parse(inv);
+    if (sal) salesRecords = JSON.parse(sal);
+    if (pur) purchaseRecords = JSON.parse(pur);
+    if (exp) expenseRecords = JSON.parse(exp);
+    if (invCount) invoiceCounter = parseInt(invCount);
+}
+
+// DATA STORE (Now loaded from localStorage)
+let inventory = [
+  { code:'MED001', name:'Paracetamol 500mg', cat:'Analgesic', unit:'Strip', cost:1.5, sell:3.5, stock:397 },
+  { code:'MED002', name:'Amoxicillin 250mg', cat:'Antibiotic', unit:'Capsule', cost:2.2, sell:5.0, stock:500 }
+];
+
+let salesRecords = [];
+let purchaseRecords = [];
+let expenseRecords = [];
+let invoiceCounter = 900000;
+
+// Initialize Data
+loadData();
+
+const USERS = {
+  admin: { pass: 'admin124', role: 'admin', display: 'Admin User' }
+};
+
+let currentUser = null;
+
+// HELPERS
+function getInv(code) { return inventory.find(i => i.code === code.toUpperCase().trim()); }
+function stockStatus(s) {
+  if (s > 20) return { label:'Available', cls:'status-available' };
+  if (s > 0)  return { label:'Low Stock', cls:'status-low' };
+  return { label:'Out of Stock', cls:'status-out' };
+}
+function fmt(n) { return Number(n).toFixed(2); }
+function toast(msg, type='success') {
+  const el = document.createElement('div');
+  el.className = `toast-msg toast-${type}`;
+  el.innerHTML = (type==='success'?'✅':type==='error'?'❌':'ℹ️') + ' ' + msg;
+  document.getElementById('toast').appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+function today() { return new Date().toISOString().slice(0,10); }
+function genInvoice() { return String(++invoiceCounter); }
+
+// LIVE CLOCK
+function updateClock() {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-US', { hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    document.getElementById('liveClock').textContent = `${timeStr} | ${dateStr}`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// LOGIN / LOGOUT
+function toggleLoginFields() {
+    const role = document.getElementById('loginRole').value;
+    document.getElementById('adminLoginFields').style.display = role === 'admin' ? 'block' : 'none';
+    document.getElementById('salesLoginFields').style.display = role === 'sales' ? 'block' : 'none';
+    document.getElementById('activationFields').style.display = role === 'activation' ? 'block' : 'none';
+}
+
+function doLogin() {
+  const role = document.getElementById('loginRole').value;
+  const isActivated = localStorage.getItem(ACTIVATION_STORAGE_KEY) === "true";
+
+  if (role === 'activation') {
+      const u = document.getElementById('actUser').value.trim();
+      const p = document.getElementById('actPass').value;
+      if (u === ACTIVATION_USER && p === atob(_key)) {
+          localStorage.setItem(ACTIVATION_STORAGE_KEY, "true");
+          alert("Software Activated Successfully! You can now login as Admin.");
+          window.location.reload();
+          return;
+      } else {
+          document.getElementById('loginError').style.display = 'block';
+          return;
+      }
+  }
+
+  if (!isActivated) {
+      alert("Mandatory Activation Required! Use the Software Activation login first.");
+      return;
+  }
+  
+  if (role === 'admin') {
+      const u = document.getElementById('loginUser').value.trim().toLowerCase();
+      const p = document.getElementById('loginPass').value;
+      const usr = USERS[u];
+      if (usr && usr.pass === p) {
+        currentUser = { ...usr, username: u };
+        finishLogin();
+      } else {
+        document.getElementById('loginError').style.display = 'block';
+      }
+  } else if (role === 'sales') {
+      const name = document.getElementById('salesmanName').value.trim();
+      if (name !== "") {
+          currentUser = { role: 'sales', display: name, username: 'sales_staff' };
+          finishLogin();
+      } else {
+          alert("Please enter your name");
+      }
+  }
+}
+
+function finishLogin() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    initApp();
+}
+
+function doLogout() {
+  currentUser = null;
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('salesmanName').value = '';
+}
+
+// APP INIT
+function initApp() {
+  document.getElementById('sidebarName').textContent = currentUser.display;
+  const badge = document.getElementById('sidebarBadge');
+  badge.textContent = currentUser.role === 'admin' ? 'Admin' : 'Sales';
+  badge.className = 'badge ' + (currentUser.role === 'admin' ? 'badge-admin' : 'badge-sales');
+  
+  const isSales = currentUser.role === 'sales';
+  document.getElementById('salesmanSalesCalc').style.display = isSales ? 'block' : 'none';
+  document.getElementById('salesmanPurchaseCalc').style.display = isSales ? 'block' : 'none';
+  document.getElementById('todaySalesResult').textContent = '';
+  document.getElementById('todayPurchaseResult').textContent = '';
+
+  buildNav();
+  navigateTo(currentUser.role === 'admin' ? 'dashboard' : 'sdashboard');
+}
+
+function buildNav() {
+  const nav = document.getElementById('sideNav');
+  const isAdmin = currentUser.role === 'admin';
+  let html = '';
+  
+  if (isAdmin) {
+    html += `<div class="nav-section">Overview</div>` + navItem('dashboard', '📊', 'Dashboard');
+    html += `<div class="nav-section">Management</div>` + navItem('stock', '🏥', 'Stock Entry') + navItem('sales', '🛒', 'Daily Sales') + navItem('purchase', '📦', 'Daily Purchase') + navItem('expense', '💸', 'Daily Expense');
+    html += `<div class="nav-section">Preferences</div>` + navItem('settings', '⚙️', 'Settings');
+  } else {
+    html += `<div class="nav-section">Overview</div>` + navItem('sdashboard', '📊', 'Dashboard');
+    html += `<div class="nav-section">Operations</div>` + navItem('sales', '🛒', 'Daily Sales') + navItem('purchase', '📦', 'Daily Purchase') + navItem('expense', '💸', 'Daily Expense') + navItem('inventory', '📋', 'View Inventory');
+    html += `<div class="nav-section">Data</div>` + navItem('backup', '☁️', 'Drive Backup');
+  }
+  
+  nav.innerHTML = html;
+}
+
+function navItem(id, icon, label) {
+  return `<div class="nav-item" id="nav-${id}" onclick="navigateTo('${id}')"><span class="ni">${icon}</span><span>${label}</span></div>`;
+}
+
+function navigateTo(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const pg = document.getElementById('page-' + id);
+  if (pg) pg.classList.add('active');
+  const ni = document.getElementById('nav-' + id);
+  if (ni) ni.classList.add('active');
+
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'sdashboard') renderSalesmanDashboard();
+  if (id === 'stock') renderInventory();
+  if (id === 'sales') initSalesPage();
+  if (id === 'purchase') initPurchasePage();
+  if (id === 'expense') initExpensePage();
+  if (id === 'inventory') renderInventoryView();
+  if (id === 'backup') renderBackupPage();
+}
+
+// DASHBOARD
+function renderDashboard() {
+  const period = document.getElementById('dashPeriodFilter').value;
+  const now = new Date();
+  const todayStr = today();
+  
+  function isWithinPeriod(dateString) {
+      const dDate = new Date(dateString);
+      if (period === 'daily') return dateString === todayStr;
+      if (period === 'weekly') {
+          const sevenDaysAgo = new Date();
+          sevenDaysAgo.setDate(now.getDate() - 7);
+          return dDate >= sevenDaysAgo;
+      }
+      if (period === 'monthly') {
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(now.getDate() - 30);
+          return dDate >= thirtyDaysAgo;
+      }
+      if (period === 'yearly') {
+          const oneYearAgo = new Date();
+          oneYearAgo.setDate(now.getDate() - 365);
+          return dDate >= oneYearAgo;
+      }
+      return true;
+  }
+
+  const filteredSales = salesRecords.filter(s => isWithinPeriod(s.date));
+  const filteredPurchases = purchaseRecords.filter(p => isWithinPeriod(p.date));
+  const filteredExpenses = expenseRecords.filter(e => isWithinPeriod(e.date));
+
+  const totalMeds = inventory.length; 
+  const lowStock = inventory.filter(i => i.stock > 0 && i.stock <= 20).length;
+  const outOfStock = inventory.filter(i => i.stock === 0).length;
+  
+  const periodSalesTotal = filteredSales.reduce((a,s) => a + s.total, 0);
+  const periodPurchaseTotal = filteredPurchases.reduce((a,p) => a + p.total, 0);
+  const periodExpenseTotal = filteredExpenses.reduce((a,e) => a + e.cost, 0);
+  
+  // PROFIT LOGIC: SALES - EXPENSE (Purchases separate as requested)
+  const periodProfit = periodSalesTotal - periodExpenseTotal;
+
+  document.getElementById('dashStats').innerHTML = `
+    <div class="stat-card blue"><div class="label">Total Products</div><div class="value">${totalMeds}</div></div>
+    <div class="stat-card green"><div class="label">${period.toUpperCase()} Sales</div><div class="value">${fmt(periodSalesTotal)}</div></div>
+    <div class="stat-card red"><div class="label">${period.toUpperCase()} Expenses</div><div class="value">${fmt(periodExpenseTotal)}</div></div>
+    <div class="stat-card ${periodProfit >= 0 ? 'orange' : 'orange-neg'}"><div class="label">${period.toUpperCase()} Net Profit</div><div class="value">${fmt(periodProfit)}</div></div>
+    <div class="stat-card purple"><div class="label">${period.toUpperCase()} Purchases</div><div class="value">${fmt(periodPurchaseTotal)}</div></div>
+    <div class="stat-card yellow"><div class="label">Low Stock</div><div class="value">${lowStock}</div></div>
+  `;
+
+  document.querySelector('#dashInvTable tbody').innerHTML = inventory.map(i => {
+    const s = stockStatus(i.stock);
+    return `<tr><td class="mono">${i.code}</td><td>${i.name}</td><td>${i.cat}</td><td class="mono">${i.stock}</td><td class="mono">${fmt(i.sell)}</td><td><span class="badge-status ${s.cls}">${s.label}</span></td></tr>`;
+  }).join('');
+  
+  document.getElementById('dashSalesBody').innerHTML = filteredSales.slice(-10).reverse().map((r,i) =>
+    `<tr><td>${i+1}</td><td>${r.date}</td><td>${r.customer}</td><td class="mono">${r.invoice}</td><td>${r.name}</td><td class="mono">${r.qty}</td><td class="mono">${fmt(r.total)}</td></tr>`
+  ).join('');
+
+  document.getElementById('dashPurchasesBody').innerHTML = filteredPurchases.slice(-10).reverse().map((r,i) =>
+    `<tr><td>${i+1}</td><td>${r.date}</td><td>${r.supplier || 'Generic'}</td><td>${r.name}</td><td class="mono">${r.qty}</td><td class="mono">${fmt(r.cost)}</td></tr>`
+  ).join('');
+}
+
+function updateCompany() {
+    const name = document.getElementById('set_compName').value.trim() || 'MedStore Pro';
+    const tag = document.getElementById('set_tagline').value.trim() || 'Medical Management';
+    document.getElementById('sideCompanyName').textContent = name;
+    document.getElementById('logCompanyName').textContent = name;
+    document.getElementById('storeTagline').textContent = tag;
+    localStorage.setItem(CLIENT_ID + '_medstore_company', name);
+    localStorage.setItem(CLIENT_ID + '_medstore_tagline', tag);
+    toast('Company Profile Updated');
+}
+
+function changePassword() {
+    const oldPass = document.getElementById('set_oldPass').value;
+    const newPass = document.getElementById('set_newPass').value;
+    const confirmPass = document.getElementById('set_confirmPass').value;
+    if (oldPass !== USERS[currentUser.username].pass) { toast('Current password incorrect', 'error'); return; }
+    if (newPass !== confirmPass) { toast('New passwords mismatch', 'error'); return; }
+    USERS[currentUser.username].pass = newPass;
+    toast('Password updated!');
+}
+
+function exportToExcel() {
+    const worksheet = XLSX.utils.json_to_sheet(inventory);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory");
+    XLSX.writeFile(workbook, "MedStore_Inventory_" + today() + ".xlsx");
+    toast('Inventory Exported Successfully');
+}
+
+function importFromExcel(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+        jsonData.forEach(item => {
+            if (!item.code || !item.name) return;
+            const existing = getInv(item.code.toString());
+            if (existing) Object.assign(existing, item);
+            else inventory.push({ ...item, code: item.code.toString().toUpperCase() });
+        });
+        saveData();
+        renderInventory();
+        toast('Import Complete');
+        event.target.value = '';
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function switchDashTab(tab, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('dashSalesTab').style.display = tab === 'sales' ? 'block' : 'none';
+    document.getElementById('dashPurchasesTab').style.display = tab === 'purchases' ? 'block' : 'none';
+}
+
+function stockCodeLookup() {
+  const code = document.getElementById('se_code').value.toUpperCase().trim();
+  const item = getInv(code);
+  if (item) {
+    document.getElementById('se_name').value = item.name;
+    document.getElementById('se_cat').value = item.cat;
+    document.getElementById('se_unit').value = item.unit;
+    document.getElementById('se_cost').value = item.cost;
+    document.getElementById('se_sell').value = item.sell;
+    document.getElementById('se_qty').value = item.stock;
+  }
+}
+
+function saveStockEntry() {
+  const code = document.getElementById('se_code').value.toUpperCase().trim();
+  const name = document.getElementById('se_name').value;
+  const cat = document.getElementById('se_cat').value;
+  const unit = document.getElementById('se_unit').value;
+  const cost = parseFloat(document.getElementById('se_cost').value);
+  const sell = parseFloat(document.getElementById('se_sell').value);
+  const qty = parseInt(document.getElementById('se_qty').value) || 0;
+  if(!code || !name) { alert("Code and Name are required"); return; }
+  const existing = getInv(code);
+  if (existing) Object.assign(existing, { name, cat, unit, cost, sell, stock: qty });
+  else inventory.push({ code, name, cat, unit, cost, sell, stock: qty });
+  saveData();
+  renderInventory();
+  toast('Stock Saved');
+}
+
+function clearStockForm() { document.querySelectorAll('#page-stock input').forEach(i => i.value = ''); }
+
+function renderInventory() {
+  const isAdmin = currentUser && currentUser.role === 'admin';
+  document.getElementById('inventoryBody').innerHTML = inventory.map(i => {
+    let actionBtns = `<button class="btn btn-primary btn-sm" onclick="editStock('${i.code}')">✏️</button>`;
+    if (isAdmin) {
+        actionBtns += ` <button class="btn btn-danger btn-sm" style="margin-left: 5px;" onclick="deleteStock('${i.code}')">🗑️</button>`;
+    }
+    return `<tr><td class="mono">${i.code}</td><td>${i.name}</td><td>${i.cat}</td><td>${i.unit}</td><td class="mono">${fmt(i.cost)}</td><td class="mono">${fmt(i.sell)}</td><td class="mono">${i.stock}</td><td>-</td><td>${actionBtns}</td></tr>`;
+  }).join('');
+}
+
+function deleteStock(code) {
+    if(confirm("Are you sure?")) {
+        inventory = inventory.filter(i => i.code !== code);
+        saveData();
+        renderInventory();
+    }
+}
+
+function editStock(code) { document.getElementById('se_code').value = code; stockCodeLookup(); }
+
+// DAILY SALES CALCULATOR & PDF
+function calcTodaySales() {
+    const todayStr = today();
+    const total = salesRecords.filter(s => s.date === todayStr).reduce((sum, s) => sum + s.total, 0);
+    document.getElementById('todaySalesResult').textContent = 'Today: ' + fmt(total);
+}
+
+// ADDED: DAILY PURCHASES CALCULATOR
+function calcTodayPurchases() {
+    const todayStr = today();
+    const total = purchaseRecords.filter(p => p.date === todayStr).reduce((sum, p) => sum + p.total, 0);
+    document.getElementById('todayPurchaseResult').textContent = 'Today: ' + fmt(total);
+}
+
+// ADMIN DASHBOARD EXPENSE CALC
+function calcDashExpenses() {
+    const todayStr = today();
+    const total = expenseRecords.filter(e => e.date === todayStr).reduce((sum, e) => sum + e.cost, 0);
+    alert("Total Expenses for Today (" + todayStr + "): " + fmt(total));
+}
+
+function generateInvoicePDF() {
+    if (salesRecords.length === 0) { alert("No saved sales found. Please save a sale first, then print."); return; }
+    const lastInvoice = salesRecords[salesRecords.length - 1].invoice;
+    const items = salesRecords.filter(r => r.invoice === lastInvoice);
+    if (items.length === 0) { alert("No items found for last invoice."); return; }
+    const customer = items[0].customer;
+    const date = items[0].date;
+    const grandTotal = items.reduce((sum, r) => sum + r.total, 0);
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const storeName = document.getElementById('sideCompanyName').textContent;
+    const storeTagline = document.getElementById('storeTagline').textContent;
+    // Header banner
+    doc.setFillColor(10, 25, 55);
+    doc.rect(0, 0, 210, 30, 'F');
+    doc.setFillColor(0, 212, 255);
+    doc.rect(0, 30, 210, 1, 'F');
+    doc.setTextColor(0, 212, 255);
+    doc.setFontSize(18); doc.setFont(undefined, 'bold');
+    doc.text(storeName, 14, 14);
+    doc.setTextColor(160, 220, 255);
+    doc.setFontSize(9); doc.setFont(undefined, 'normal');
+    doc.text(storeTagline, 14, 22);
+    // Invoice details
+    doc.setTextColor(40, 40, 40);
+    doc.setFontSize(12); doc.setFont(undefined, 'bold');
+    doc.text("Customer Invoice", 14, 42);
+    doc.setFontSize(10); doc.setFont(undefined, 'normal');
+    doc.text("Invoice No: " + lastInvoice, 14, 50);
+    doc.text("Customer: " + customer, 14, 57);
+    doc.text("Date: " + date, 14, 64);
+    const tableData = items.map((item, index) => [index + 1, item.code, item.name, item.qty, fmt(item.price), fmt(item.total)]);
+    doc.autoTable({
+        startY: 70,
+        head: [['#', 'Code', 'Medicine', 'Qty', 'Price', 'Total']],
+        body: tableData,
+        foot: [['', '', '', '', 'Total', fmt(grandTotal)]],
+        theme: 'grid',
+        headStyles: { fillColor: [10, 25, 55], textColor: [0, 212, 255], fontStyle: 'bold' },
+        footStyles: { fillColor: [30, 50, 90], textColor: [255,255,255], fontStyle: 'bold' }
+    });
+    // Footer
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        const pageH = doc.internal.pageSize.height;
+        doc.setFillColor(10, 25, 55);
+        doc.rect(0, pageH - 10, 210, 10, 'F');
+        doc.setFontSize(7); doc.setTextColor(140, 190, 220);
+        doc.text(storeName + '   |   ' + storeTagline + '   |   Invoice: ' + lastInvoice, 14, pageH - 3.5);
+    }
+    doc.save(`Invoice_${lastInvoice}_${customer.replace(/\s+/g, '_')}.pdf`);
+}
+
+// SALES logic
+let salesRows = [];
+function initSalesPage() {
+  document.getElementById('sl_date').value = today();
+  document.getElementById('sl_invoice').value = genInvoice();
+  salesRows = [];
+  document.getElementById('salesBody').innerHTML = '';
+  addSalesRow();
+  renderSalesHistory();
+  calcTodaySales();
+}
+
+function addSalesRow() {
+  const id = Date.now();
+  salesRows.push(id);
+  const tr = document.createElement('tr');
+  tr.id = 'sr-' + id;
+  tr.innerHTML = `
+    <td>${salesRows.length}</td>
+    <td><input type="text" id="sc-${id}" oninput="saleCodeFill(${id})" style="text-transform:uppercase;width:90px"></td>
+    <td><input type="number" id="sqty-${id}" oninput="calcSaleRow(${id})" style="width:70px" placeholder="0"></td> <td><input type="text" readonly id="sn-${id}" class="autofilled"></td>
+    <td><input type="text" readonly id="scat-${id}" class="autofilled"></td>
+    <td><input type="text" readonly id="su-${id}" class="autofilled"></td>
+    <td><input type="number" readonly id="sp-${id}" class="autofilled"></td>
+    <td><input type="number" readonly id="st-${id}" class="autofilled"></td>
+    <td><button class="del-row" onclick="delSaleRow(${id})">✕</button></td>
+  `;
+  document.getElementById('salesBody').appendChild(tr);
+}
+
+function saleCodeFill(id) {
+  const code = document.getElementById('sc-'+id).value.toUpperCase().trim();
+  const item = getInv(code);
+  if (item) {
+    document.getElementById('sn-'+id).value = item.name;
+    document.getElementById('scat-'+id).value = item.cat;
+    document.getElementById('su-'+id).value = item.unit;
+    document.getElementById('sp-'+id).value = item.sell;
+    calcSaleRow(id);
+  }
+}
+
+function calcSaleRow(id) {
+  const qty = parseFloat(document.getElementById('sqty-'+id).value) || 0;
+  const price = parseFloat(document.getElementById('sp-'+id).value) || 0;
+  document.getElementById('st-'+id).value = fmt(qty * price);
+  calcSaleTotal();
+}
+
+function calcSaleTotal() {
+  let total = 0, qty = 0;
+  salesRows.forEach(id => {
+    total += parseFloat(document.getElementById('st-'+id).value) || 0;
+    qty += parseFloat(document.getElementById('sqty-'+id).value) || 0;
+  });
+  document.getElementById('sl_grandTotal').textContent = fmt(total);
+  document.getElementById('sl_totalQty').textContent = qty;
+  document.getElementById('sl_totalItems').textContent = salesRows.length;
+}
+
+function delSaleRow(id) {
+  document.getElementById('sr-'+id).remove();
+  salesRows = salesRows.filter(i => i !== id);
+  calcSaleTotal();
+}
+
+function saveSale() {
+  const date = document.getElementById('sl_date').value;
+  const customer = document.getElementById('sl_customer').value.trim();
+  const invoice = document.getElementById('sl_invoice').value;
+  if (!customer) { alert("Customer Name is mandatory!"); return; }
+  let hasItems = false;
+  salesRows.forEach(id => {
+    const codeElem = document.getElementById('sc-'+id);
+    if(!codeElem) return;
+    const code = codeElem.value.toUpperCase().trim();
+    const qty = parseInt(document.getElementById('sqty-'+id).value) || 0;
+    const item = getInv(code);
+    if (item && qty > 0) {
+      item.stock -= qty;
+      salesRecords.push({ date, customer, invoice, code, name: item.name, qty, price: item.sell, total: qty * item.sell });
+      hasItems = true;
+    }
+  });
+  if(hasItems) { 
+    saveData();
+    toast('Sale Saved', 'success'); 
+    setTimeout(() => toast('⬇️ Please click Download Backup to save your data!', 'info'), 800);
+    clearSaleForm(); 
+    renderSalesHistory(); 
+  } else { alert("No valid items"); }
+}
+
+function clearSaleForm() { initSalesPage(); document.getElementById('sl_customer').value = ''; }
+function renderSalesHistory() {
+  document.getElementById('salesHistBody').innerHTML = salesRecords.slice(-20).reverse().map((r,i) => `<tr><td>${i+1}</td><td>${r.date}</td><td>${r.customer}</td><td>${r.invoice}</td><td>${r.code}</td><td>${r.name}</td><td>${r.qty}</td><td>${fmt(r.price)}</td><td>${fmt(r.total)}</td></tr>`).join('');
+}
+
+
+// PURCHASE logic
+let purchaseRows = [];
+function initPurchasePage() {
+  document.getElementById('pu_date').value = today();
+  purchaseRows = [];
+  document.getElementById('purchaseBody').innerHTML = '';
+  addPurchaseRow();
+  renderPurchaseHistory();
+  calcTodayPurchases();
+}
+
+function addPurchaseRow() {
+  const id = Date.now();
+  purchaseRows.push(id);
+  const tr = document.createElement('tr');
+  tr.id = 'pr-' + id;
+  tr.innerHTML = `
+    <td>${purchaseRows.length}</td>
+    <td><input type="text" id="pc-${id}" oninput="purchaseCodeFill(${id})" style="width:90px; text-transform:uppercase;"></td>
+    <td><input type="number" id="pqty-${id}" oninput="calcPurRow(${id})" style="width:70px" placeholder="0"></td>
+    <td><input type="text" readonly id="pn-${id}" class="autofilled"></td>
+    <td><input type="text" readonly id="pcat-${id}" class="autofilled"></td>
+    <td><input type="text" readonly id="pu-${id}" class="autofilled"></td>
+    <td><input type="number" id="ppr-${id}" oninput="calcPurRow(${id})" style="width:80px"></td>
+    <td><input type="number" readonly id="ptot-${id}" class="autofilled"></td>
+    <td><button class="del-row" onclick="delPurRow(${id})">✕</button></td>
+  `;
+  document.getElementById('purchaseBody').appendChild(tr);
+}
+
+function purchaseCodeFill(id) {
+  const code = document.getElementById('pc-'+id).value.toUpperCase().trim();
+  const item = getInv(code);
+  if(item){ 
+    document.getElementById('pn-'+id).value=item.name; 
+    document.getElementById('pcat-'+id).value=item.cat; 
+    document.getElementById('pu-'+id).value=item.unit; 
+    document.getElementById('ppr-'+id).value=item.cost; 
+    calcPurRow(id);
+  }
+}
+
+function calcPurRow(id) {
+  const q = parseFloat(document.getElementById('pqty-'+id).value) || 0; 
+  const p = parseFloat(document.getElementById('ppr-'+id).value) || 0;
+  document.getElementById('ptot-'+id).value = fmt(q*p);
+  calcPurchaseTotal();
+}
+
+function calcPurchaseTotal() {
+  let total = 0, qty = 0;
+  purchaseRows.forEach(id => {
+    total += parseFloat(document.getElementById('ptot-'+id).value) || 0;
+    qty += parseFloat(document.getElementById('pqty-'+id).value) || 0;
+  });
+  document.getElementById('pu_grandTotal').textContent = fmt(total);
+  document.getElementById('pu_totalQty').textContent = qty;
+  document.getElementById('pu_totalItems').textContent = purchaseRows.length;
+}
+
+function savePurchase() {
+  const date = document.getElementById('pu_date').value;
+  const supplier = document.getElementById('pu_supplier').value.trim();
+  if (!supplier) { alert("Supplier Name is mandatory!"); return; }
+  let hasItems = false;
+  purchaseRows.forEach(id => {
+    const codeElem = document.getElementById('pc-'+id);
+    if(!codeElem) return;
+    const code = codeElem.value.toUpperCase().trim();
+    const qty = parseInt(document.getElementById('pqty-'+id).value) || 0;
+    const cost = parseFloat(document.getElementById('ppr-'+id).value) || 0;
+    const item = getInv(code);
+    if(item && qty>0) { 
+        item.stock += qty; item.cost = cost; 
+        purchaseRecords.push({date, supplier, code, name:item.name, qty, cost, total:qty*cost}); 
+        hasItems = true;
+    }
+  });
+  if(hasItems) { 
+    saveData();
+    toast('Purchase Saved', 'success'); 
+    setTimeout(() => toast('⬇️ Please click Download Backup to save your data!', 'info'), 800);
+    initPurchasePage(); 
+    document.getElementById('pu_supplier').value = ''; 
+  } else { alert("No valid items"); }
+}
+
+function renderPurchaseHistory() {
+  document.getElementById('purchaseHistBody').innerHTML = purchaseRecords.slice(-20).reverse().map((r,i) => `<tr><td>${i+1}</td><td>${r.date}</td><td>${r.supplier}</td><td>${r.code}</td><td>${r.name}</td><td>${r.qty}</td><td>${fmt(r.cost)}</td><td>${fmt(r.total)}</td></tr>`).join('');
+}
+
+// ─── DAILY EXPENSE LOGIC ───
+function initExpensePage() {
+    document.getElementById('ex_date').value = today();
+    renderExpenseHistory();
+}
+
+function saveExpense() {
+    const date = document.getElementById('ex_date').value;
+    const desc = document.getElementById('ex_desc').value.trim();
+    const cost = parseFloat(document.getElementById('ex_cost').value);
+    const remarks = document.getElementById('ex_remarks').value.trim();
+
+    if (!desc || isNaN(cost)) {
+        alert("Description and Cost are required!");
+        return;
+    }
+
+    expenseRecords.push({ id: Date.now(), date, desc, cost, remarks });
+    saveData();
+    toast('Expense Saved', 'success');
+    clearExpenseForm();
+    renderExpenseHistory();
+}
+
+function clearExpenseForm() {
+    document.getElementById('ex_desc').value = '';
+    document.getElementById('ex_cost').value = '';
+    document.getElementById('ex_remarks').value = '';
+    document.getElementById('ex_date').value = today();
+}
+
+function renderExpenseHistory() {
+    document.getElementById('expenseHistBody').innerHTML = expenseRecords.slice(-20).reverse().map((r, i) => `
+        <tr>
+            <td>${i + 1}</td>
+            <td>${r.date}</td>
+            <td>${r.desc}</td>
+            <td class="mono">${fmt(r.cost)}</td>
+            <td>${r.remarks || '—'}</td>
+            <td><button class="del-row" onclick="deleteExpense(${r.id})">✕</button></td>
+        </tr>
+    `).join('');
+}
+
+function deleteExpense(id) {
+    if (confirm("Delete this expense entry?")) {
+        expenseRecords = expenseRecords.filter(e => e.id !== id);
+        saveData();
+        renderExpenseHistory();
+    }
+}
+
+function renderInventoryView() {
+  document.getElementById('inventoryViewBody').innerHTML = inventory.map(i => `<tr><td>${i.code}</td><td>${i.name}</td><td>${i.cat}</td><td>${i.unit}</td><td>${fmt(i.sell)}</td><td>${i.stock}</td><td>-</td></tr>`).join('');
+}
+
+// ─── GOOGLE DRIVE BACKUP (Download & Restore) ───
+let backupDownloadedThisSession = false;
+
+function backupToFile() {
+  const backupData = {
+    version: 1,
+    backupDate: new Date().toISOString(),
+    storeName: localStorage.getItem(CLIENT_ID + '_medstore_company') || CLIENT_NAME,
+    inventory: inventory,
+    salesRecords: salesRecords,
+    purchaseRecords: purchaseRecords,
+    expenseRecords: expenseRecords,
+    invoiceCounter: invoiceCounter
+  };
+  const json = JSON.stringify(backupData, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'myback.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  backupDownloadedThisSession = true;
+  toast('Backup downloaded! Save it to your Google Drive.', 'success');
+  const statusEl = document.getElementById('backupStatus');
+  if (statusEl) { statusEl.style.display='block'; statusEl.textContent = '✅ Backup downloaded at ' + new Date().toLocaleTimeString(); }
+  const statusEl2 = document.getElementById('backupStatus2');
+  if (statusEl2) { statusEl2.style.display='block'; statusEl2.textContent = '✅ Backup downloaded at ' + new Date().toLocaleTimeString(); }
+}
+
+function restoreFromFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.version || !data.inventory) {
+        toast('Invalid backup file!', 'error');
+        return;
+      }
+      if (!confirm(`Restore backup from ${data.backupDate ? data.backupDate.slice(0,10) : 'unknown date'}?\n\nThis will replace ALL current data. Are you sure?`)) {
+        event.target.value = '';
+        return;
+      }
+      inventory = data.inventory || [];
+      salesRecords = data.salesRecords || [];
+      purchaseRecords = data.purchaseRecords || [];
+      expenseRecords = data.expenseRecords || [];
+      invoiceCounter = data.invoiceCounter || 900000;
+      saveData();
+      toast('Data restored successfully!', 'success');
+      renderDashboard();
+      renderInventory();
+    } catch(err) {
+      toast('Failed to read backup file!', 'error');
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function renderBackupPage() {
+  const statsEl = document.getElementById('backupPageStats');
+  if (statsEl) {
+    statsEl.innerHTML = `
+      <div style="background:var(--bg3); border:1px solid var(--border); border-radius:12px; padding:16px; margin-top:4px;">
+        <div style="font-size:.8rem; font-weight:700; color:var(--text2); text-transform:uppercase; letter-spacing:.7px; margin-bottom:12px;">Current Data Summary</div>
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px; text-align:center;">
+          <div><div style="font-size:1.4rem; font-weight:700; font-family:var(--mono); color:var(--accent)">${inventory.length}</div><div style="font-size:.78rem; color:var(--text2)">Products</div></div>
+          <div><div style="font-size:1.4rem; font-weight:700; font-family:var(--mono); color:var(--accent2)">${salesRecords.length}</div><div style="font-size:.78rem; color:var(--text2)">Sales</div></div>
+          <div><div style="font-size:1.4rem; font-weight:700; font-family:var(--mono); color:var(--purple)">${purchaseRecords.length}</div><div style="font-size:.78rem; color:var(--text2)">Purchases</div></div>
+          <div><div style="font-size:1.4rem; font-weight:700; font-family:var(--mono); color:var(--accent3)">${expenseRecords.length}</div><div style="font-size:.78rem; color:var(--text2)">Expenses</div></div>
+        </div>
+      </div>`;
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  📊  SALESMAN DASHBOARD  — view-only, with PDF report
+// ══════════════════════════════════════════════════════
+
+function renderSalesmanDashboard() {
+  const period = document.getElementById('sdashPeriodFilter').value;
+  const now = new Date();
+  const todayStr = today();
+
+  function isWithinPeriod(dateString) {
+    const dDate = new Date(dateString);
+    if (period === 'daily')   return dateString === todayStr;
+    if (period === 'weekly')  { const d = new Date(); d.setDate(now.getDate()-7);  return dDate >= d; }
+    if (period === 'monthly') { const d = new Date(); d.setDate(now.getDate()-30); return dDate >= d; }
+    if (period === 'yearly')  { const d = new Date(); d.setDate(now.getDate()-365);return dDate >= d; }
+    return true;
+  }
+
+  const fSales     = salesRecords.filter(s => isWithinPeriod(s.date));
+  const fPurchases = purchaseRecords.filter(p => isWithinPeriod(p.date));
+  const fExpenses  = expenseRecords.filter(e => isWithinPeriod(e.date));
+
+  const totalMeds   = inventory.length;
+  const lowStock    = inventory.filter(i => i.stock > 0 && i.stock <= 20).length;
+  const outOfStock  = inventory.filter(i => i.stock === 0).length;
+  const salesTotal  = fSales.reduce((a,s) => a + s.total, 0);
+  const purTotal    = fPurchases.reduce((a,p) => a + p.total, 0);
+  const expTotal    = fExpenses.reduce((a,e) => a + e.cost, 0);
+  const profit      = salesTotal - expTotal;
+
+  document.getElementById('sdashStats').innerHTML = `
+    <div class="stat-card blue"><div class="label">Total Products</div><div class="value">${totalMeds}</div></div>
+    <div class="stat-card green"><div class="label">${period.toUpperCase()} Sales</div><div class="value">${fmt(salesTotal)}</div></div>
+    <div class="stat-card red"><div class="label">${period.toUpperCase()} Expenses</div><div class="value">${fmt(expTotal)}</div></div>
+    <div class="stat-card ${profit >= 0 ? 'orange' : 'orange-neg'}"><div class="label">${period.toUpperCase()} Net Profit</div><div class="value">${fmt(profit)}</div></div>
+    <div class="stat-card purple"><div class="label">${period.toUpperCase()} Purchases</div><div class="value">${fmt(purTotal)}</div></div>
+    <div class="stat-card yellow"><div class="label">Low Stock</div><div class="value">${lowStock}</div></div>
+  `;
+
+  // Inventory table
+  document.querySelector('#sdashInvTable tbody').innerHTML = inventory.map(i => {
+    const s = stockStatus(i.stock);
+    return `<tr><td class="mono">${i.code}</td><td>${i.name}</td><td>${i.cat}</td><td class="mono">${i.stock}</td><td class="mono">${fmt(i.sell)}</td><td><span class="badge-status ${s.cls}">${s.label}</span></td></tr>`;
+  }).join('');
+
+  // Low stock alerts
+  const alerts = inventory.filter(i => i.stock <= 20);
+  document.getElementById('sdashAlertsPanel').innerHTML = alerts.length === 0
+    ? '<p style="color:var(--text2);font-size:.85rem;padding:10px 0">✅ All items well stocked</p>'
+    : alerts.map(i => `<div class="inventory-alert"><span class="dot"></span><span><strong>${i.name}</strong> — ${i.stock <= 0 ? 'Out of Stock' : 'Low: ' + i.stock + ' left'}</span></div>`).join('');
+
+  // Recent transactions
+  document.getElementById('sdashSalesBody').innerHTML = fSales.slice(-10).reverse().map((r,i) =>
+    `<tr><td>${i+1}</td><td>${r.date}</td><td>${r.customer}</td><td class="mono">${r.invoice}</td><td>${r.name}</td><td class="mono">${r.qty}</td><td class="mono">${fmt(r.total)}</td></tr>`
+  ).join('');
+  document.getElementById('sdashPurchasesBody').innerHTML = fPurchases.slice(-10).reverse().map((r,i) =>
+    `<tr><td>${i+1}</td><td>${r.date}</td><td>${r.supplier||'—'}</td><td>${r.name}</td><td class="mono">${r.qty}</td><td class="mono">${fmt(r.cost)}</td></tr>`
+  ).join('');
+  document.getElementById('sdashExpensesBody').innerHTML = fExpenses.slice(-10).reverse().map((r,i) =>
+    `<tr><td>${i+1}</td><td>${r.date}</td><td>${r.desc}</td><td class="mono">${fmt(r.cost)}</td><td>${r.remarks||'—'}</td></tr>`
+  ).join('');
+
+  // Monthly breakdown — show for monthly or yearly
+  const monthlySection = document.getElementById('sdashMonthlySection');
+  if (period === 'monthly' || period === 'yearly') {
+    monthlySection.style.display = 'block';
+    renderSdashMonthly(period === 'yearly' ? 12 : 1);
+  } else {
+    monthlySection.style.display = 'none';
+  }
+}
+
+function renderSdashMonthly(monthsBack) {
+  // Build one row per calendar month for the past N months (up to 12)
+  const rows = [];
+  const now = new Date();
+  for (let m = monthsBack - 1; m >= 0; m--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - m, 1);
+    const yr = d.getFullYear();
+    const mo = d.getMonth(); // 0-based
+    const label = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    const prefix = yr + '-' + String(mo + 1).padStart(2, '0');
+
+    const ms = salesRecords.filter(r => r.date && r.date.startsWith(prefix));
+    const mp = purchaseRecords.filter(r => r.date && r.date.startsWith(prefix));
+    const me = expenseRecords.filter(r => r.date && r.date.startsWith(prefix));
+
+    const st = ms.reduce((a, r) => a + r.total, 0);
+    const pt = mp.reduce((a, r) => a + r.total, 0);
+    const et = me.reduce((a, r) => a + r.cost, 0);
+    const np = st - et;
+    rows.push({ label, st, pt, et, np });
+  }
+
+  // Also collect ALL unique months from records if yearly to not miss any
+  if (monthsBack === 12) {
+    const allMonths = new Set();
+    [...salesRecords, ...purchaseRecords, ...expenseRecords].forEach(r => {
+      if (r.date) allMonths.add(r.date.slice(0, 7));
+    });
+    allMonths.forEach(prefix => {
+      const [yr, mo] = prefix.split('-').map(Number);
+      const alreadyIn = rows.some(r => {
+        const d = new Date(yr, mo - 1, 1);
+        return r.label === d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+      });
+      if (!alreadyIn) {
+        const label = new Date(yr, mo - 1, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+        const ms = salesRecords.filter(r => r.date && r.date.startsWith(prefix));
+        const mp = purchaseRecords.filter(r => r.date && r.date.startsWith(prefix));
+        const me = expenseRecords.filter(r => r.date && r.date.startsWith(prefix));
+        const st = ms.reduce((a, r) => a + r.total, 0);
+        const pt = mp.reduce((a, r) => a + r.total, 0);
+        const et = me.reduce((a, r) => a + r.cost, 0);
+        rows.push({ label, st, pt, et, np: st - et });
+      }
+    });
+    rows.sort((a, b) => a.label < b.label ? -1 : 1);
+  }
+
+  document.getElementById('sdashMonthlyBody').innerHTML = rows.map(r => `
+    <tr>
+      <td style="font-weight:600">${r.label}</td>
+      <td class="mono" style="color:var(--accent2)">${fmt(r.st)}</td>
+      <td class="mono" style="color:var(--purple)">${fmt(r.pt)}</td>
+      <td class="mono" style="color:var(--accent3)">${fmt(r.et)}</td>
+      <td class="mono" style="color:${r.np >= 0 ? 'var(--accent2)' : 'var(--red)'}; font-weight:700">${fmt(r.np)}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px">No data available</td></tr>';
+}
+
+function switchSdashTab(tab, btn) {
+  document.querySelectorAll('#page-sdashboard .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('sdashSalesTab').style.display     = tab === 'sales'     ? 'block' : 'none';
+  document.getElementById('sdashPurchasesTab').style.display = tab === 'purchases' ? 'block' : 'none';
+  document.getElementById('sdashExpensesTab').style.display  = tab === 'expenses'  ? 'block' : 'none';
+}
+
+// ── Generate PDF Report ──
+function generateDashReport() {
+  const period     = document.getElementById('sdashPeriodFilter').value;
+  const { jsPDF }  = window.jspdf;
+  const doc        = new jsPDF('l', 'mm', 'a4'); // landscape for daily wide table
+  const storeName  = document.getElementById('sideCompanyName').textContent;
+  const now        = new Date();
+  const dateStr    = now.toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' });
+  const timeStr    = now.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
+  const periodLabel = period.charAt(0).toUpperCase() + period.slice(1);
+  const reportedBy  = currentUser ? currentUser.display : 'Staff';
+  // A4 landscape: 297 x 210
+  const W = 297, pageH = 210;
+
+  // ── period filter ──
+  function inPeriod(ds) {
+    const d = new Date(ds);
+    if (period === 'daily')   return ds === today();
+    if (period === 'weekly')  { const x = new Date(); x.setDate(now.getDate()-7);   return d >= x; }
+    if (period === 'monthly') { const x = new Date(); x.setDate(now.getDate()-30);  return d >= x; }
+    if (period === 'yearly')  { const x = new Date(); x.setDate(now.getDate()-365); return d >= x; }
+    return true;
+  }
+
+  const fSales     = salesRecords.filter(s => inPeriod(s.date));
+  const fPurchases = purchaseRecords.filter(p => inPeriod(p.date));
+  const fExpenses  = expenseRecords.filter(e => inPeriod(e.date));
+  const salesTotal = fSales.reduce((a,s) => a+s.total, 0);
+  const purTotal   = fPurchases.reduce((a,p) => a+p.total, 0);
+  const expTotal   = fExpenses.reduce((a,e) => a+e.cost, 0);
+  const netProfit  = salesTotal - expTotal;
+
+  // ── Shared styles ──
+  const HEAD_COLOR  = [10, 25, 55];
+  const ACCENT      = [0, 212, 255];
+  const GREEN_RGB   = [0, 130, 70];
+  const PURPLE_RGB  = [90, 50, 180];
+  const RED_RGB     = [180, 40, 40];
+  const ORANGE_RGB  = [200, 120, 0];
+  const FOOT_COLOR  = [30, 50, 90];
+
+  // ── Draw header banner ──
+  function drawHeader() {
+    doc.setFillColor(...HEAD_COLOR);
+    doc.rect(0, 0, W, 22, 'F');
+    doc.setFillColor(...ACCENT);
+    doc.rect(0, 22, W, 1, 'F');
+    // Store name
+    doc.setTextColor(...ACCENT); doc.setFontSize(15); doc.setFont(undefined,'bold');
+    doc.text(storeName, 14, 9);
+    // Tagline
+    const storeTagline = document.getElementById('storeTagline').textContent;
+    doc.setTextColor(200, 235, 255); doc.setFontSize(7.5); doc.setFont(undefined,'normal');
+    doc.text(storeTagline, 14, 15);
+    // Report info
+    doc.setTextColor(160,220,255); doc.setFontSize(8); doc.setFont(undefined,'normal');
+    doc.text(periodLabel + ' Report   |   Date: ' + dateStr + '   Time: ' + timeStr + '   |   Prepared by: ' + reportedBy, 14, 20);
+  }
+
+  // ── Draw summary boxes aligned to table columns (DAILY) ──
+  // Table: 6 cols, x=14 to x=283, total=269mm
+  // Col widths: [0+1]=~89.6, [2+3]=~89.6, [4]=~44.8, [5]=~44.8
+  function drawSummaryBoxesDaily(sy) {
+    const bH = 18, sx = 14, tableW = 269;
+    // Match exact column proportions: 2cols + 2cols + 1col + 1col out of 6 cols
+    const colW = tableW / 6;
+    const boxes = [
+      { label:'Total Purchases', value:fmt(purTotal),   rgb:PURPLE_RGB,              light:[235,225,255], w: colW*2 - 1 },
+      { label:'Total Sales',     value:fmt(salesTotal), rgb:GREEN_RGB,               light:[220,255,235], w: colW*2 - 1 },
+      { label:'Total Expenses',  value:fmt(expTotal),   rgb:RED_RGB,                 light:[255,225,225], w: colW   - 1 },
+      { label:'Net Profit',      value:fmt(netProfit),  rgb:netProfit>=0?ORANGE_RGB:[180,30,30],
+                                                         light:netProfit>=0?[255,240,210]:[255,210,210], w: colW },
+    ];
+    let x = sx;
+    boxes.forEach(b => {
+      doc.setFillColor(...b.light);  doc.roundedRect(x, sy, b.w, bH, 2, 2, 'F');
+      doc.setFillColor(...b.rgb);    doc.rect(x, sy, 2, bH, 'F');
+      doc.setTextColor(80,80,80);    doc.setFontSize(7);  doc.setFont(undefined,'normal');
+      doc.text(b.label, x+5, sy+7);
+      doc.setTextColor(...b.rgb);    doc.setFontSize(11); doc.setFont(undefined,'bold');
+      doc.text(b.value, x+5, sy+15);
+      x += b.w + 1;
+    });
+    return sy + bH + 5;
+  }
+
+  // ── Draw 4 equal summary boxes (Monthly / Yearly) ──
+  function drawSummaryBoxes(sy) {
+    const bH=18, bW=60, gap=4, sx=14;
+    const boxes=[
+      {label:'Total Sales',    value:fmt(salesTotal), rgb:GREEN_RGB,    light:[220,255,235]},
+      {label:'Total Purchases',value:fmt(purTotal),   rgb:PURPLE_RGB,   light:[235,225,255]},
+      {label:'Total Expenses', value:fmt(expTotal),   rgb:RED_RGB,      light:[255,225,225]},
+      {label:'Net Profit',     value:fmt(netProfit),  rgb:netProfit>=0?ORANGE_RGB:[180,30,30],
+                                                       light:netProfit>=0?[255,240,210]:[255,210,210]},
+    ];
+    boxes.forEach((b,i)=>{
+      const x = sx + i*(bW+gap);
+      doc.setFillColor(...b.light);   doc.roundedRect(x, sy, bW, bH, 2, 2, 'F');
+      doc.setFillColor(...b.rgb);     doc.rect(x, sy, 2, bH, 'F');
+      doc.setTextColor(80,80,80);     doc.setFontSize(7); doc.setFont(undefined,'normal');
+      doc.text(b.label, x+5, sy+7);
+      doc.setTextColor(...b.rgb);     doc.setFontSize(11); doc.setFont(undefined,'bold');
+      doc.text(b.value, x+5, sy+15);
+    });
+    return sy + bH + 5;
+  }
+
+  // ── Draw footer on every page ──
+  function drawFooters() {
+    const storeTagline = document.getElementById('storeTagline').textContent;
+    const pages = doc.internal.getNumberOfPages();
+    for(let i=1;i<=pages;i++){
+      doc.setPage(i);
+      doc.setFillColor(...HEAD_COLOR);
+      doc.rect(0, pageH-8, W, 8, 'F');
+      doc.setFontSize(6.5); doc.setFont(undefined,'normal'); doc.setTextColor(140,190,220);
+      doc.text(storeName + '   |   ' + storeTagline + '   |   ' + periodLabel + ' Report   |   ' + dateStr, 14, pageH-2.5);
+      doc.text('Page '+i+' / '+pages, W-20, pageH-2.5);
+    }
+  }
+
+  // ── check page space, add new page if needed ──
+  function chkPage(y, need) {
+    if(y + need > pageH - 12){ doc.addPage(); return 28; }
+    return y;
+  }
+
+  // ══════════════════════════════════════════
+  //  DAILY  — Excel Daily sheet format:
+  //  Date | Supplier | Total Purchase | Customer Name | Total Bill | Total Expense | Net Profit
+  // ══════════════════════════════════════════
+  if(period === 'daily') {
+    drawHeader();
+    let y = drawSummaryBoxesDaily(27);
+
+    // divider
+    doc.setDrawColor(200,210,230); doc.setLineWidth(0.3);
+    doc.line(14, y, W-14, y); y += 5;
+
+    // Build rows: one row per sale transaction, parallel purchase column
+    // Group sales by customer, purchases by supplier for the day
+    const todayStr = today();
+
+    // All unique dates in filtered data (for daily = just today)
+    const dates = [...new Set([
+      ...fSales.map(r=>r.date),
+      ...fPurchases.map(r=>r.date),
+      ...fExpenses.map(r=>r.date)
+    ])].sort();
+
+    dates.forEach(ds => {
+      const dSales = fSales.filter(r=>r.date===ds);
+      const dPurchases = fPurchases.filter(r=>r.date===ds);
+      const dExpenses = fExpenses.filter(r=>r.date===ds);
+
+      const dl = new Date(ds).toLocaleDateString('en-GB',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+
+      y = chkPage(y, 40);
+
+      // Date header bar
+      doc.setFillColor(230,240,255); doc.rect(14, y, W-28, 7, 'F');
+      doc.setFillColor(0,100,200); doc.rect(14, y, 2.5, 7, 'F');
+      doc.setFontSize(9); doc.setFont(undefined,'bold'); doc.setTextColor(0,60,140);
+      doc.text(dl, 20, y+5); y += 10;
+
+      // Build parallel rows: max of sales count vs purchase count
+      const maxRows = Math.max(dSales.length, dPurchases.length, 1);
+
+      // Group sales by customer (sum totals)
+      const custMap = {};
+      dSales.forEach(r=>{
+        if(!custMap[r.customer]) custMap[r.customer] = 0;
+        custMap[r.customer] += r.total;
+      });
+      const custRows = Object.entries(custMap); // [[name, total], ...]
+
+      // Group purchases by supplier (sum totals)
+      const supMap = {};
+      dPurchases.forEach(r=>{
+        if(!supMap[r.supplier||'—']) supMap[r.supplier||'—'] = 0;
+        supMap[r.supplier||'—'] += r.total;
+      });
+      const supRows = Object.entries(supMap); // [[name, total], ...]
+
+      const totalExpense = dExpenses.reduce((a,r)=>a+r.cost, 0);
+      const totalSale    = custRows.reduce((a,[,v])=>a+v, 0);
+      const totalPur     = supRows.reduce((a,[,v])=>a+v, 0);
+      const dayProfit    = totalSale - totalExpense;
+
+      // Build table body rows — merge supplier + customer side by side
+      const tableMaxRows = Math.max(custRows.length, supRows.length);
+      const tableBody = [];
+      for(let i=0; i<tableMaxRows; i++){
+        const sup  = supRows[i]  ? supRows[i][0]        : '';
+        const supT = supRows[i]  ? fmt(supRows[i][1])   : '';
+        const cust = custRows[i] ? custRows[i][0]       : '';
+        const custT= custRows[i] ? fmt(custRows[i][1])  : '';
+        // Expense and Net Profit only on first row
+        const expVal    = i===0 ? fmt(totalExpense) : '';
+        const profitVal = i===0 ? fmt(dayProfit)    : '';
+        tableBody.push([
+          sup, supT,
+          cust, custT,
+          expVal, profitVal
+        ]);
+      }
+
+      // Footer row with totals
+      const footRow = [
+        'Total', fmt(totalPur),
+        'Total', fmt(totalSale),
+        fmt(totalExpense), fmt(dayProfit)
+      ];
+
+      y = chkPage(y, tableMaxRows * 8 + 20);
+
+      doc.autoTable({
+        startY: y,
+        head: [
+          ['Daily Purchase', '', 'Daily Sale', '', 'Total Expense', 'Net Profit'],
+          ['Supplier', 'Total Purchase', 'Customer Name', 'Total Bill', '', '']
+        ],
+        body: tableBody,
+        foot: [footRow],
+        theme: 'grid',
+        styles: { fontSize: 8.5, cellPadding: 3, halign: 'center', valign: 'middle' },
+        headStyles: { fontStyle: 'bold', halign: 'center', valign: 'middle', textColor: 255 },
+        footStyles: { fillColor: FOOT_COLOR, textColor: 255, fontStyle: 'bold', halign: 'center' },
+        columnStyles: {
+          0: { halign: 'center', textColor: [40,40,100],  cellWidth: 269/6 },
+          1: { halign: 'center', textColor: [90,50,180],  fontStyle: 'bold', cellWidth: 269/6 },
+          2: { halign: 'center', textColor: [0,80,40],    cellWidth: 269/6 },
+          3: { halign: 'center', textColor: [0,130,70],   fontStyle: 'bold', cellWidth: 269/6 },
+          4: { halign: 'center', textColor: [180,40,40],  fontStyle: 'bold', cellWidth: 269/6 },
+          5: { halign: 'center', fontStyle: 'bold',       cellWidth: 269/6 }
+        },
+        didParseCell(data) {
+          // ── Row 0: section title headers with individual background colors ──
+          if(data.section==='head' && data.row.index===0) {
+            if(data.column.index===0) {
+              data.cell.colSpan = 2;
+              data.cell.styles.fillColor = [60, 40, 160];   // purple — Daily Purchase
+              data.cell.styles.textColor = [255,255,255];
+              data.cell.styles.fontSize  = 9;
+            }
+            if(data.column.index===1) { data.cell.text = []; data.cell.styles.fillColor = [60,40,160]; }
+            if(data.column.index===2) {
+              data.cell.colSpan = 2;
+              data.cell.styles.fillColor = [0, 120, 60];    // green — Daily Sale
+              data.cell.styles.textColor = [255,255,255];
+              data.cell.styles.fontSize  = 9;
+            }
+            if(data.column.index===3) { data.cell.text = []; data.cell.styles.fillColor = [0,120,60]; }
+            if(data.column.index===4) {
+              data.cell.styles.fillColor = [180, 30, 30];   // red — Total Expense
+              data.cell.styles.textColor = [255,255,255];
+              data.cell.styles.fontSize  = 9;
+            }
+            if(data.column.index===5) {
+              data.cell.styles.fillColor = [160, 90, 0];    // orange — Net Profit
+              data.cell.styles.textColor = [255,255,255];
+              data.cell.styles.fontSize  = 9;
+            }
+          }
+          // ── Row 1: sub-headers with slightly lighter shades ──
+          if(data.section==='head' && data.row.index===1) {
+            if(data.column.index===0) data.cell.styles.fillColor = [80, 55, 190];
+            if(data.column.index===1) data.cell.styles.fillColor = [80, 55, 190];
+            if(data.column.index===2) data.cell.styles.fillColor = [0, 150, 80];
+            if(data.column.index===3) data.cell.styles.fillColor = [0, 150, 80];
+            if(data.column.index===4) data.cell.styles.fillColor = [200, 50, 50];
+            if(data.column.index===5) data.cell.styles.fillColor = [190, 110, 0];
+          }
+          // ── Net profit body colour ──
+          if(data.section==='body' && data.column.index===5 && data.cell.raw!=='') {
+            const v = parseFloat(data.cell.raw)||0;
+            data.cell.styles.textColor = v>=0 ? ORANGE_RGB : [180,40,40];
+          }
+          // ── Net profit footer colour ──
+          if(data.section==='foot' && data.column.index===5) {
+            const v = parseFloat(data.cell.raw)||0;
+            data.cell.styles.textColor = v>=0 ? [255,200,50] : [255,100,100];
+          }
+        },
+        margin: { left:14, right:14 }
+      });
+      y = doc.lastAutoTable.finalY + 6;
+    });
+  }
+
+  // ══════════════════════════════════════════
+  //  MONTHLY  — Excel Monthly sheet format:
+  //  Date | Total Sale | Total Purchase | Total Expense | Net Profit  + Grand Total
+  // ══════════════════════════════════════════
+  else if(period === 'monthly' || period === 'weekly') {
+    // Weekly also uses same day-by-day format
+
+    drawHeader();
+    let y = drawSummaryBoxes(27);
+    doc.setDrawColor(200,210,230); doc.setLineWidth(0.3);
+    doc.line(14, y, W-14, y); y += 5;
+
+    // For weekly: 7 days; for monthly: 30 days
+    let allDates;
+    if(period === 'weekly') {
+      allDates = [];
+      for(let i=6;i>=0;i--){
+        const d=new Date(); d.setDate(now.getDate()-i);
+        allDates.push(d.toISOString().slice(0,10));
+      }
+    } else {
+      allDates = [...new Set([
+        ...fSales.map(r=>r.date),
+        ...fPurchases.map(r=>r.date),
+        ...fExpenses.map(r=>r.date)
+      ])].filter(Boolean).sort();
+    }
+
+    const tableRows = allDates.map(ds => {
+      const dl = new Date(ds).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+      const st = salesRecords.filter(r=>r.date===ds).reduce((a,r)=>a+r.total,0);
+      const pt = purchaseRecords.filter(r=>r.date===ds).reduce((a,r)=>a+r.total,0);
+      const et = expenseRecords.filter(r=>r.date===ds).reduce((a,r)=>a+r.cost,0);
+      const np = st - et;
+      return [dl, fmt(st), fmt(pt), fmt(et), fmt(np)];
+    });
+
+    const gS = tableRows.reduce((a,r)=>a+parseFloat(r[1]),0);
+    const gP = tableRows.reduce((a,r)=>a+parseFloat(r[2]),0);
+    const gE = tableRows.reduce((a,r)=>a+parseFloat(r[3]),0);
+    const gN = tableRows.reduce((a,r)=>a+parseFloat(r[4]),0);
+
+    const sectionLabel = period==='weekly' ? '7-Day Report' : '30-Day Report';
+
+    // Section title
+    doc.setFontSize(10); doc.setFont(undefined,'bold'); doc.setTextColor(...HEAD_COLOR);
+    doc.text(sectionLabel, 14, y+5); y += 9;
+
+    doc.autoTable({
+      startY: y,
+      head: [['Date', 'Total Sale', 'Total Purchase', 'Total Expense', 'Net Profit']],
+      body: tableRows,
+      foot: [['Grand Total', fmt(gS), fmt(gP), fmt(gE), fmt(gN)]],
+      theme: 'grid',
+      styles: { fontSize: 9, cellPadding: 4, halign: 'center', valign: 'middle' },
+      headStyles: { fillColor: HEAD_COLOR, textColor: ACCENT, fontStyle: 'bold', halign: 'center', valign: 'middle' },
+      footStyles: { fillColor: FOOT_COLOR, textColor: 255, fontStyle: 'bold', halign: 'center', valign: 'middle' },
+      columnStyles: {
+        0: { halign: 'center', fontStyle:'bold', textColor:[40,40,40] },
+        1: { halign: 'center', textColor: GREEN_RGB,  fontStyle:'bold' },
+        2: { halign: 'center', textColor: PURPLE_RGB, fontStyle:'bold' },
+        3: { halign: 'center', textColor: RED_RGB,    fontStyle:'bold' },
+        4: { halign: 'center', fontStyle:'bold' }
+      },
+      didParseCell(data) {
+        if(data.column.index===4 && (data.section==='body'||data.section==='foot')) {
+          const v = parseFloat(data.cell.raw)||0;
+          data.cell.styles.textColor = v>=0 ? ORANGE_RGB : [180,40,40];
+        }
+      },
+      margin: { left:14, right:14 }
+    });
+  }
+
+  // ══════════════════════════════════════════
+  //  YEARLY  — Excel Yearly sheet format:
+  //  Month | Total Sale | Total Purchase | Total Expense | Net Profit  + Grand Total
+  // ══════════════════════════════════════════
+  else if(period === 'yearly') {
+
+    drawHeader();
+    let y = drawSummaryBoxes(27);
+    doc.setDrawColor(200,210,230); doc.setLineWidth(0.3);
+    doc.line(14, y, W-14, y); y += 5;
+
+    // All unique YYYY-MM across all records
+    const allPfx = [...new Set([
+      ...salesRecords.map(r=>r.date&&r.date.slice(0,7)).filter(Boolean),
+      ...purchaseRecords.map(r=>r.date&&r.date.slice(0,7)).filter(Boolean),
+      ...expenseRecords.map(r=>r.date&&r.date.slice(0,7)).filter(Boolean)
+    ])].sort();
+
+    const monthRows = allPfx.map(pfx => {
+      const [yr,mo] = pfx.split('-').map(Number);
+      const label = new Date(yr,mo-1,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+      const st = salesRecords.filter(r=>r.date&&r.date.startsWith(pfx)).reduce((a,r)=>a+r.total,0);
+      const pt = purchaseRecords.filter(r=>r.date&&r.date.startsWith(pfx)).reduce((a,r)=>a+r.total,0);
+      const et = expenseRecords.filter(r=>r.date&&r.date.startsWith(pfx)).reduce((a,r)=>a+r.cost,0);
+      const np = st - et;
+      return [label, fmt(st), fmt(pt), fmt(et), fmt(np)];
+    });
+
+    const gS = monthRows.reduce((a,r)=>a+parseFloat(r[1]),0);
+    const gP = monthRows.reduce((a,r)=>a+parseFloat(r[2]),0);
+    const gE = monthRows.reduce((a,r)=>a+parseFloat(r[3]),0);
+    const gN = monthRows.reduce((a,r)=>a+parseFloat(r[4]),0);
+
+    // Section title
+    doc.setFontSize(10); doc.setFont(undefined,'bold'); doc.setTextColor(...HEAD_COLOR);
+    doc.text('Yearly Report — Monthly Breakdown', 14, y+5); y += 9;
+
+    doc.autoTable({
+      startY: y,
+      head: [['Month', 'Total Sale', 'Total Purchase', 'Total Expense', 'Net Profit']],
+      body: monthRows,
+      foot: [['Grand Total', fmt(gS), fmt(gP), fmt(gE), fmt(gN)]],
+      theme: 'grid',
+      styles: { fontSize: 10, cellPadding: 5, halign: 'center', valign: 'middle' },
+      headStyles: { fillColor: HEAD_COLOR, textColor: ACCENT, fontStyle: 'bold', halign: 'center', valign: 'middle', fontSize: 10 },
+      footStyles: { fillColor: FOOT_COLOR, textColor: 255, fontStyle: 'bold', halign: 'center', valign: 'middle', fontSize: 10 },
+      columnStyles: {
+        0: { halign: 'center', fontStyle:'bold', textColor:[40,40,40] },
+        1: { halign: 'center', textColor: GREEN_RGB,  fontStyle:'bold' },
+        2: { halign: 'center', textColor: PURPLE_RGB, fontStyle:'bold' },
+        3: { halign: 'center', textColor: RED_RGB,    fontStyle:'bold' },
+        4: { halign: 'center', fontStyle:'bold' }
+      },
+      didParseCell(data) {
+        if(data.column.index===4 && (data.section==='body'||data.section==='foot')) {
+          const v = parseFloat(data.cell.raw)||0;
+          data.cell.styles.textColor = v>=0 ? ORANGE_RGB : [180,40,40];
+        }
+      },
+      margin: { left:14, right:14 }
+    });
+  }
+
+  drawFooters();
+  const fname = storeName.replace(/\s+/g,'_')+'_'+periodLabel+'_Report_'+today()+'.pdf';
+  doc.save(fname);
+  toast('📄 '+periodLabel+' Report downloaded!','success');
+}
+
+
+// ══════════════════════════════════════════════════════
+
+
+// ─── CREATOR TOOLS (hidden password protected) ───
+const CREATOR_PASS = atob('SmVuaW91c0Ax'); // "Jenious@1"
+
+function _verifyCreatorPass() {
+  const msgEl = document.getElementById('creatorResetMsg');
+  const passEl = document.getElementById('creatorPassInput');
+  const entered = passEl.value;
+  msgEl.style.display = 'block';
+  if (!entered) {
+    msgEl.style.color = '#f87171';
+    msgEl.textContent = '❌ Please enter the Creator Password.';
+    return false;
+  }
+  if (entered !== CREATOR_PASS) {
+    msgEl.style.color = '#f87171';
+    msgEl.textContent = '❌ Incorrect Creator Password.';
+    passEl.value = '';
+    return false;
+  }
+  return true;
+}
+
+// 🔴 Factory Reset — deletes ALL data (same as admin factoryReset but uses creator password)
+function creatorFactoryReset() {
+  if (!_verifyCreatorPass()) return;
+  const msgEl = document.getElementById('creatorResetMsg');
+  const passEl = document.getElementById('creatorPassInput');
+
+  const confirmed = confirm(
+    '⚠️  CREATOR FACTORY RESET — FINAL WARNING\n\n' +
+    'This will permanently delete:\n' +
+    '  • All inventory / medicines\n' +
+    '  • All sales records\n' +
+    '  • All purchase records\n' +
+    '  • All expense records\n' +
+    '  • Invoice counter (resets to 900000)\n\n' +
+    'Store name, tagline, password & activation are kept.\n\n' +
+    'This CANNOT be undone. Continue?'
+  );
+  if (!confirmed) { msgEl.style.color = 'var(--text2)'; msgEl.textContent = 'Reset cancelled.'; passEl.value = ''; return; }
+
+  const keepKeys = [
+    CLIENT_ID + '_medstore_activated',
+    CLIENT_ID + '_medstore_company',
+    CLIENT_ID + '_medstore_tagline',
+    CLIENT_ID + '_fb_cfg',
+    CLIENT_ID + '_autosync',
+    CLIENT_ID + '_last_sync',
+    CLIENT_ID + '_last_sync_ts'
+  ];
+  const preserved = {};
+  keepKeys.forEach(k => { const v = localStorage.getItem(k); if (v !== null) preserved[k] = v; });
+
+  [
+    CLIENT_ID + '_medstore_inventory',
+    CLIENT_ID + '_medstore_sales',
+    CLIENT_ID + '_medstore_purchases',
+    CLIENT_ID + '_medstore_expenses',
+    CLIENT_ID + '_medstore_invoice_count'
+  ].forEach(k => localStorage.removeItem(k));
+
+  Object.entries(preserved).forEach(([k, v]) => localStorage.setItem(k, v));
+
+  inventory = []; salesRecords = []; purchaseRecords = []; expenseRecords = []; invoiceCounter = 900000;
+  localStorage.setItem(CLIENT_ID + '_medstore_inventory',     JSON.stringify([]));
+  localStorage.setItem(CLIENT_ID + '_medstore_sales',         JSON.stringify([]));
+  localStorage.setItem(CLIENT_ID + '_medstore_purchases',     JSON.stringify([]));
+  localStorage.setItem(CLIENT_ID + '_medstore_expenses',      JSON.stringify([]));
+  localStorage.setItem(CLIENT_ID + '_medstore_invoice_count', '900000');
+
+  backupDownloadedThisSession = true;
+  passEl.value = '';
+  msgEl.style.color = 'var(--accent2)'; msgEl.textContent = '✅ Factory Reset complete. All data deleted. Settings preserved.';
+  toast('🔴 Creator Factory Reset complete!', 'success');
+  try { renderDashboard(); } catch(e) {}
+  try { renderInventory();  } catch(e) {}
+}
+
+// 🟡 Reset Dashboard — deletes only sales/purchase/expense history. Keeps all stock/inventory.
+function creatorDashboardReset() {
+  if (!_verifyCreatorPass()) return;
+  const msgEl = document.getElementById('creatorResetMsg');
+  const passEl = document.getElementById('creatorPassInput');
+
+  const confirmed = confirm(
+    '⚠️  RESET DASHBOARD HISTORY — CONFIRM\n\n' +
+    'This will delete:\n' +
+    '  • All sales records\n' +
+    '  • All purchase records\n' +
+    '  • All expense records\n' +
+    '  • Invoice counter (resets to 900000)\n\n' +
+    'The following will NOT change:\n' +
+    '  • Inventory / stock data\n' +
+    '  • Store name, tagline & password\n' +
+    '  • Activation status\n\n' +
+    'This CANNOT be undone. Continue?'
+  );
+  if (!confirmed) { msgEl.style.color = 'var(--text2)'; msgEl.textContent = 'Reset cancelled.'; passEl.value = ''; return; }
+
+  salesRecords = []; purchaseRecords = []; expenseRecords = []; invoiceCounter = 900000;
+  localStorage.setItem(CLIENT_ID + '_medstore_sales',         JSON.stringify([]));
+  localStorage.setItem(CLIENT_ID + '_medstore_purchases',     JSON.stringify([]));
+  localStorage.setItem(CLIENT_ID + '_medstore_expenses',      JSON.stringify([]));
+  localStorage.setItem(CLIENT_ID + '_medstore_invoice_count', '900000');
+
+  backupDownloadedThisSession = true;
+  passEl.value = '';
+  msgEl.style.color = 'var(--accent2)'; msgEl.textContent = '✅ Dashboard Reset complete. All transaction history cleared. Stock data preserved.';
+  toast('🟡 Dashboard history reset complete!', 'success');
+  try { renderDashboard(); } catch(e) {}
+}
+
+// ─── FACTORY RESET ───
+function factoryReset() {
+  const msgEl  = document.getElementById('resetMsg');
+  const passEl = document.getElementById('resetConfirmPass');
+
+  function showMsg(txt, isError) {
+    msgEl.style.display = 'block';
+    msgEl.style.color   = isError ? '#f87171' : 'var(--accent2)';
+    msgEl.textContent   = txt;
+  }
+
+  const enteredPass = passEl.value;
+  if (!enteredPass) { showMsg('❌ Please enter your admin password to confirm.', true); return; }
+
+  // Verify against current admin password
+  const adminUser = USERS[currentUser ? currentUser.username : ''];
+  if (!adminUser || adminUser.pass !== enteredPass) {
+    showMsg('❌ Incorrect password. Reset cancelled.', true);
+    passEl.value = '';
+    return;
+  }
+
+  // Final confirmation dialog
+  const confirmed = confirm(
+    '⚠️  FACTORY RESET — FINAL WARNING\n\n' +
+    'This will permanently delete:\n' +
+    '  • All inventory / medicines\n' +
+    '  • All sales records\n' +
+    '  • All purchase records\n' +
+    '  • All expense records\n' +
+    '  • Invoice counter (resets to 900000)\n\n' +
+    'The following will NOT change:\n' +
+    '  • Store name & tagline\n' +
+    '  • Admin password\n' +
+    '  • Activation status\n' +
+    '  • Firebase / Cloud Sync config\n\n' +
+    'This CANNOT be undone. Continue?'
+  );
+  if (!confirmed) { showMsg('Reset cancelled.', false); passEl.value = ''; return; }
+
+  const keepKeys = [
+    CLIENT_ID + '_medstore_activated',
+    CLIENT_ID + '_medstore_company',
+    CLIENT_ID + '_medstore_tagline',
+    CLIENT_ID + '_fb_cfg',
+    CLIENT_ID + '_autosync',
+    CLIENT_ID + '_last_sync',
+    CLIENT_ID + '_last_sync_ts'
+  ];
+  const preserved = {};
+  keepKeys.forEach(k => { const v = localStorage.getItem(k); if (v !== null) preserved[k] = v; });
+
+  // Delete all data keys
+  [
+    CLIENT_ID + '_medstore_inventory',
+    CLIENT_ID + '_medstore_sales',
+    CLIENT_ID + '_medstore_purchases',
+    CLIENT_ID + '_medstore_expenses',
+    CLIENT_ID + '_medstore_invoice_count'
+  ].forEach(k => localStorage.removeItem(k));
+
+  // Restore preserved settings
+  Object.entries(preserved).forEach(([k, v]) => localStorage.setItem(k, v));
+
+  // Reset in-memory arrays
+  inventory       = [];
+  salesRecords    = [];
+  purchaseRecords = [];
+  expenseRecords  = [];
+  invoiceCounter  = 900000;
+
+  // Write clean empty data to localStorage
+  localStorage.setItem(CLIENT_ID + '_medstore_inventory',     JSON.stringify([]));
+  localStorage.setItem(CLIENT_ID + '_medstore_sales',         JSON.stringify([]));
+  localStorage.setItem(CLIENT_ID + '_medstore_purchases',     JSON.stringify([]));
+  localStorage.setItem(CLIENT_ID + '_medstore_expenses',      JSON.stringify([]));
+  localStorage.setItem(CLIENT_ID + '_medstore_invoice_count', '900000');
+
+  // Skip the "download backup" warning since data was intentionally wiped
+  backupDownloadedThisSession = true;
+
+  passEl.value = '';
+  showMsg('✅ Factory reset complete. All data deleted. All settings preserved.', false);
+  toast('🔴 Factory reset complete — ready for new data entry!', 'success');
+
+  // Refresh dashboard and inventory views
+  try { renderDashboard(); } catch(e) {}
+  try { renderInventory();  } catch(e) {}
+}
+
+window.addEventListener('beforeunload', function(e) {
+  if (!currentUser) return;
+  if (!backupDownloadedThisSession) {
+    const msg = '⚠️ You have NOT downloaded your backup yet!\n\nPlease go to Backup and download before closing to avoid data loss.';
+    e.preventDefault();
+    e.returnValue = msg;
+    return msg;
+  }
+});
+</script>
+</body>
+</html>
+
+<script type="module" src="./app.js"></script>

@@ -1,0 +1,67 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+// آپ کا فائر بیس کنفیگریشن
+const firebaseConfig = {
+  apiKey: "AIzaSyBQ_ETX0gAk3OVI9PAGXfYwNgh6c8pVEeA",
+  authDomain: "school-erp-22782.firebaseapp.com",
+  projectId: "school-erp-22782",
+  storageBucket: "school-erp-22782.firebasestorage.app",
+  messagingSenderId: "980130453218",
+  appId: "1:980130453218:web:4e0901f077e7cc50e070bb"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// کلاؤڈ پر میڈیسن اسٹاک سیو یا ایڈٹ کرنے کا فنکشن
+window.saveStockEntryCloud = async function(itemCode, medicineName, category, unit, costPrice, sellPrice, qty) {
+    try {
+        await addDoc(collection(db, "MedStore_Inventory"), {
+            code: itemCode,
+            name: medicineName,
+            category: category,
+            unit: unit,
+            cost: parseFloat(costPrice),
+            sell: parseFloat(sellPrice),
+            qty: parseInt(qty),
+            timestamp: new Date()
+        });
+        alert("Medicine added to Cloud successfully!");
+    } catch (error) {
+        console.error("Cloud error: ", error);
+    }
+};
+
+// کلاؤڈ سے لائیو اسٹاک موبائل اور لیپ ٹاپ پر سنک کرنے کا فنکشن
+if (document.getElementById("inventoryBody")) {
+    onSnapshot(collection(db, "MedStore_Inventory"), (snapshot) => {
+        let tbody = document.getElementById("inventoryBody");
+        tbody.innerHTML = "";
+        snapshot.forEach((docSnap) => {
+            let med = docSnap.data();
+            let id = docSnap.id;
+            tbody.innerHTML += `
+                <tr>
+                    <td>${med.code}</td>
+                    <td>${med.name}</td>
+                    <td>${med.category}</td>
+                    <td>${med.unit}</td>
+                    <td>${med.cost}</td>
+                    <td>${med.sell}</td>
+                    <td>${med.qty}</td>
+                    <td><span class="badge-status status-available">Available</span></td>
+                    <td>
+                        <button class="btn btn-danger btn-sm" onclick="deleteMedCloud('${id}')">Delete</button>
+                    </td>
+                </tr>`;
+        });
+    });
+}
+
+// کلاؤڈ سے ڈیلیٹ کرنے کا فنکشن
+window.deleteMedCloud = async function(id) {
+    if(confirm("Delete from cloud permanently?")) {
+        await deleteDoc(doc(db, "MedStore_Inventory", id));
+    }
+}
